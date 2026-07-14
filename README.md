@@ -1,35 +1,35 @@
-# Agents From Scratch 
+# 从零构建智能体
 
-The repo is a guide to building agents from scratch. It builds up to an ["ambient"](https://blog.langchain.dev/introducing-ambient-agents/) agent that can manage your email with connection to the Gmail API. It's grouped into 4 sections, each with a notebook and accompanying code in the `src/email_assistant` directory. These section build from the basics of agents, to agent evaluation, to human-in-the-loop, and finally to memory. These all come together in an agent that you can deploy, and the principles can be applied to other agents across a wide range of tasks. 
+本仓库是一份从零构建智能体的指南，最终将实现一个可通过 Gmail API 管理邮件的[环境式（ambient）智能体](https://blog.langchain.dev/introducing-ambient-agents/)。内容分为 4 个部分，每部分都包含一个 Notebook 及 `src/email_assistant` 目录中的配套代码。这些部分依次涵盖智能体基础、智能体评估、人工介入和记忆，最终组合为一个可部署的智能体；其中的原则也可应用于大量其他智能体任务。
 
-![overview](notebooks/img/overview.png)
+![概览](notebooks/img/overview.png)
 
-## Environment Setup 
+## 环境配置
 
-### Python Version
+### Python 版本
 
-* Ensure you're using Python 3.11 or later. 
-* This version is required for optimal compatibility with LangGraph. 
+* 请确保使用 Python 3.11 或更高版本。
+* 该版本可与 LangGraph 保持最佳兼容性。
 
 ```shell
 python3 --version
 ```
 
-### API Keys
+### API 密钥
 
-* 开通[阿里云百炼](https://bailian.console.aliyun.com/)并创建 API Key。
-* Sign up for LangSmith [here](https://smith.langchain.com/).
-* Generate a LangSmith API key.
+* 开通[阿里云百炼](https://bailian.console.aliyun.com/)并创建 API 密钥。
+* 在[此处](https://smith.langchain.com/)注册 LangSmith。
+* 创建 LangSmith API 密钥。
 
-### Set Environment Variables
+### 设置环境变量
 
-* Create a `.env` file in the root directory:
+* 在项目根目录创建 `.env` 文件：
 ```shell
-# Copy the .env.example file to .env
+# 将 .env.example 文件复制为 .env
 cp .env.example .env
 ```
 
-* Edit the `.env` file with the following:
+* 按如下内容编辑 `.env` 文件：
 ```shell
 LANGSMITH_API_KEY=your_langsmith_api_key
 LANGSMITH_TRACING=true
@@ -41,7 +41,7 @@ QWEN_MODEL=qwen-plus
 # DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
-* You can also set the environment variables in your terminal:
+* 也可以在终端中设置环境变量：
 ```shell
 export LANGSMITH_API_KEY=your_langsmith_api_key
 export LANGSMITH_TRACING=true
@@ -50,131 +50,132 @@ export DASHSCOPE_API_KEY=your_dashscope_api_key
 
 本项目使用 `langchain-openai` 的 `ChatOpenAI` 适配器调用百炼的 OpenAI 兼容接口；它不需要 OpenAI API Key。请确保环境中已安装 `langchain-openai`。
 
-### Package Installation
+### 安装依赖包
 
-**Recommended: Using uv (faster and more reliable)**
+**推荐：使用 uv（更快且更可靠）**
 
 ```shell
-# Create a virtual environment
+# 创建虚拟环境
 uv venv
 
-# Install project dependencies
+# 安装项目依赖
 uv pip install -r requirements.txt
 
-# Activate the virtual environment
+# 激活虚拟环境
 source .venv/bin/activate
 ```
 
-**Alternative: Using pip**
+**替代方案：使用 pip**
 
 ```shell
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-# Ensure you have a recent version of pip
+# 确保 pip 为较新版本
 $ python3 -m pip install --upgrade pip
-# Install project dependencies
+# 安装项目依赖
 $ pip install -r requirements.txt
 ```
 
-> **⚠️ IMPORTANT**: 安装依赖后，请从项目根目录执行脚本或设置 `PYTHONPATH=src`，以便 Python 能找到 `email_assistant` 包。
+> **⚠️ 重要提示**：安装依赖后，请从项目根目录执行脚本或设置 `PYTHONPATH=src`，以便 Python 能找到 `email_assistant` 包。
 
-## Structure 
+## 项目内容
 
-The repo is organized into the 4 sections, with a notebook for each and accompanying code in the `src/email_assistant` directory.
+仓库按 4 个部分组织；每一部分都有对应的 Notebook，以及位于 `src/email_assistant` 目录中的配套代码。
 
-### Preface: LangGraph 101
-For a brief introduction to LangGraph and some of the concepts used in this repo, see the [LangGraph 101 notebook](notebooks/langgraph_101.ipynb). This notebook explains the basics of chat models, tool calling, agents vs workflows, LangGraph nodes / edges / memory, and LangGraph Studio.
+### 前言：LangGraph 101
 
-### Building an agent 
-* Notebook: [notebooks/agent.ipynb](/notebooks/agent.ipynb)
-* Code: [src/email_assistant/email_assistant.py](/src/email_assistant/email_assistant.py)
+如需快速了解 LangGraph 和本仓库使用的部分概念，请参阅 [LangGraph 101 笔记本](notebooks/langgraph_101.ipynb)。该笔记本介绍聊天模型、工具调用、智能体与工作流的区别、LangGraph 的节点 / 边 / 记忆，以及 LangGraph Studio 的基础知识。
 
-![overview-agent](notebooks/img/overview_agent.png)
+### 构建智能体
+* 笔记本：[notebooks/agent.ipynb](/notebooks/agent.ipynb)
+* 代码：[src/email_assistant/email_assistant.py](/src/email_assistant/email_assistant.py)
 
-This notebook shows how to build the email assistant, combining an [email triage step](https://langchain-ai.github.io/langgraph/tutorials/workflows/) with an agent that handles the email response. You can see the linked code for the full implementation in `src/email_assistant/email_assistant.py`.
+![智能体概览](notebooks/img/overview_agent.png)
 
-![Screenshot 2025-04-04 at 4 06 18 PM](notebooks/img/studio.png)
+该笔记本展示如何构建邮件助手：将[邮件分诊步骤](https://langchain-ai.github.io/langgraph/tutorials/workflows/)与负责处理邮件回复的智能体结合。完整实现见 `src/email_assistant/email_assistant.py`。
 
-### Evaluation 
-* Notebook: [notebooks/evaluation.ipynb](/notebooks/evaluation.ipynb)
+![Studio 截图](notebooks/img/studio.png)
 
-![overview-eval](notebooks/img/overview_eval.png)
+### 评估
+* 笔记本：[notebooks/evaluation.ipynb](/notebooks/evaluation.ipynb)
 
-This notebook introduces evaluation with an email dataset in [eval/email_dataset.py](/eval/email_dataset.py). It shows how to run evaluations using Pytest and the LangSmith `evaluate` API. It runs evaluation for emails responses using LLM-as-a-judge as well as evaluations for tools calls and triage decisions.
+![评估概览](notebooks/img/overview_eval.png)
 
-![Screenshot 2025-04-08 at 8 07 48 PM](notebooks/img/eval.png)
+该笔记本使用 [eval/email_dataset.py](/eval/email_dataset.py) 中的邮件数据集介绍评估方法，演示如何使用 Pytest 和 LangSmith 的 `evaluate` API 运行评估。它使用 LLM-as-a-judge 评估邮件回复，也评估工具调用和分诊决策。
 
-### Human-in-the-loop 
-* Notebook: [notebooks/hitl.ipynb](/notebooks/hitl.ipynb)
-* Code: [src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py)
+![评估截图](notebooks/img/eval.png)
 
-![overview-hitl](notebooks/img/overview_hitl.png)
+### 人工介入
+* 笔记本：[notebooks/hitl.ipynb](/notebooks/hitl.ipynb)
+* 代码：[src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py)
 
-This notebooks shows how to add human-in-the-loop (HITL), allowing the user to review specific tool calls (e.g., send email, schedule meeting). For this, we use [Agent Inbox](https://github.com/langchain-ai/agent-inbox) as an interface for human in the loop. You can see the linked code for the full implementation in [src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py).
+![人工介入概览](notebooks/img/overview_hitl.png)
 
-![Agent Inbox showing email threads](notebooks/img/agent-inbox.png)
+该笔记本展示如何加入人工介入（HITL），使用户能够审查特定工具调用（如发送邮件、安排会议）。为此，项目使用 [Agent Inbox](https://github.com/langchain-ai/agent-inbox) 作为人工介入界面。完整实现见 [src/email_assistant/email_assistant_hitl.py](/src/email_assistant/email_assistant_hitl.py)。
 
-### Memory  
-* Notebook: [notebooks/memory.ipynb](/notebooks/memory.ipynb)
-* Code: [src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)
+![显示邮件线程的 Agent Inbox](notebooks/img/agent-inbox.png)
 
-![overview-memory](notebooks/img/overview_memory.png)  
+### 记忆
+* 笔记本：[notebooks/memory.ipynb](/notebooks/memory.ipynb)
+* 代码：[src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)
 
-This notebook shows how to add memory to the email assistant, allowing it to learn from user feedback and adapt to preferences over time. The memory-enabled assistant ([email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)) uses the [LangGraph Store](https://langchain-ai.github.io/langgraph/concepts/memory/#long-term-memory) to persist memories. You can see the linked code for the full implementation in [src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py).
+![记忆概览](notebooks/img/overview_memory.png)
 
-## Connecting to APIs  
+该笔记本展示如何为邮件助手添加记忆，使其能从用户反馈中学习，并随时间适应用户偏好。启用记忆的助手（[email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)）使用 [LangGraph Store](https://langchain-ai.github.io/langgraph/concepts/memory/#long-term-memory) 持久化保存记忆。完整实现见 [src/email_assistant/email_assistant_hitl_memory.py](/src/email_assistant/email_assistant_hitl_memory.py)。
 
-The above notebooks using mock email and calendar tools. 
+## 连接 API
 
-### Gmail Integration and Deployment
+上述笔记本使用模拟的邮件和日历工具。
 
-Set up Google API credentials following the instructions in [Gmail Tools README](src/email_assistant/tools/gmail/README.md).
+### Gmail 集成与部署
 
-The README also explains how to deploy the graph to LangGraph Platform.
+请按照 [Gmail 工具 README](src/email_assistant/tools/gmail/README.md) 中的说明配置 Google API 凭据。
 
-The full implementation of the Gmail integration is in [src/email_assistant/email_assistant_hitl_memory_gmail.py](/src/email_assistant/email_assistant_hitl_memory_gmail.py).
+该 README 还说明了如何将图部署至 LangGraph Platform。
 
-## Running Tests
+Gmail 集成的完整实现位于 [src/email_assistant/email_assistant_hitl_memory_gmail.py](/src/email_assistant/email_assistant_hitl_memory_gmail.py)。
 
-The repository includes an automated test suite to evaluate the email assistant. 
+## 运行测试
 
-Tests verify correct tool usage and response quality using LangSmith for tracking.
+仓库包含用于评估邮件助手的自动化测试套件。
 
-### Running Tests with [run_all_tests.py](/tests/run_all_tests.py)
+测试会验证工具使用是否正确及回复质量，并使用 LangSmith 跟踪结果。
+
+### 使用 [run_all_tests.py](/tests/run_all_tests.py) 运行测试
 
 ```shell
 python tests/run_all_tests.py
 ```
 
-### Test Results
+### 测试结果
 
-Test results are logged to LangSmith under the project name specified in your `.env` file (`LANGSMITH_PROJECT`). This provides:
-- Visual inspection of agent traces
-- Detailed evaluation metrics
-- Comparison of different agent implementations
+测试结果会记录在 LangSmith 中，项目名称由 `.env` 文件中的 `LANGSMITH_PROJECT` 指定。你可以：
+- 可视化检查智能体轨迹
+- 查看详细评估指标
+- 比较不同智能体实现
 
-### Available Test Implementations
+### 可测试的实现
 
-The available implementations for testing are:
-- `email_assistant` - Basic email assistant
+可用于测试的实现包括：
+- `email_assistant` - 基础邮件助手
 
-### Testing Notebooks
+### 测试笔记本
 
-You can also run tests to verify all notebooks execute without errors:
+你也可以运行测试，以确认所有笔记本均能无错误执行：
 
 ```shell
-# Run all notebook tests
+# 运行全部笔记本测试
 python tests/test_notebooks.py
 
-# Or run via pytest
+# 或通过 pytest 运行
 pytest tests/test_notebooks.py -v
 ```
 
-## Future Extensions
+## 后续扩展
 
-Add [LangMem](https://langchain-ai.github.io/langmem/) to manage memories:
-* Manage a collection of background memories. 
-* Add memory tools that can look up facts in the background memories. 
+引入 [LangMem](https://langchain-ai.github.io/langmem/) 管理记忆：
+* 管理一组后台记忆。
+* 添加可在后台记忆中检索事实的记忆工具。
 
 ## 项目结构
 
