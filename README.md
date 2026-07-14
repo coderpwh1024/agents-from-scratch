@@ -170,5 +170,50 @@ Add [LangMem](https://langchain-ai.github.io/langmem/) to manage memories:
 * Manage a collection of background memories. 
 * Add memory tools that can look up facts in the background memories. 
 
+## 项目结构
 
+```text
+.
+├── AGENTS.md                         # 面向编码智能体的仓库协作说明
+├── CLAUDE.md                         # 补充的仓库开发指引
+├── README.md                         # 项目概览、环境配置与使用说明
+├── langgraph.json                    # LangGraph 图定义与部署配置
+├── notebooks/                        # 分阶段讲解的教程 Notebook
+│   ├── langgraph_101.ipynb           # LangGraph 基础知识
+│   ├── agent.ipynb                   # 基础邮件助手
+│   ├── evaluation.ipynb              # 评估流程
+│   ├── hitl.ipynb                    # 人工参与（HITL）流程
+│   ├── memory.ipynb                  # 持久化记忆流程
+│   ├── test_tools.py                 # Notebook 工具辅助检查
+│   └── img/                          # Notebook 和 README 使用的图片资源
+├── src/
+│   └── email_assistant/              # 邮件助手 Python 包
+│       ├── langgraph_101.py          # LangGraph 入门示例
+│       ├── email_assistant.py        # 基础邮件分类与回复智能体
+│       ├── email_assistant_hitl.py   # 支持人工审核操作的智能体
+│       ├── email_assistant_hitl_memory.py
+│       │                             # 带持久化记忆的 HITL 智能体
+│       ├── email_assistant_hitl_memory_gmail.py
+│       │                             # 集成 Gmail 的记忆型智能体
+│       ├── configuration.py          # 运行时配置模型
+│       ├── schemas.py                # 通用数据结构定义
+│       ├── prompts.py                # 邮件分类和回复生成提示词
+│       ├── utils.py                  # 工作流与消息处理工具函数
+│       ├── cron.py                   # 定时拉取 Gmail 邮件的图
+│       ├── eval/                     # 邮件数据集和评估工具
+│       │   ├── email_dataset.py
+│       │   ├── evaluate_triage.py
+│       │   └── prompts.py
+│       └── tools/                    # 智能体可调用的工具实现
+│           ├── base.py               # 通用工具抽象
+│           ├── default/              # 用于本地演示的模拟邮件和日历工具
+│           └── gmail/                # Gmail API 工具及初始化脚本
+└── tests/                            # 自动化测试
+    ├── conftest.py                   # Pytest 配置和自定义参数
+    ├── run_all_tests.py              # 智能体评估测试套件入口
+    ├── test_response.py              # 工具调用和回复质量测试
+    └── test_notebooks.py             # Notebook 执行测试
+```
+
+本项目围绕“逐步增强的邮件助手”组织：`notebooks` 用于分阶段讲解实现思路，`src/email_assistant` 提供可运行的 LangGraph 实现、提示词、工具和评估组件，`tests` 负责验证基础邮件助手与 Notebook。Gmail 的配置和集成代码位于 `src/email_assistant/tools/gmail`。
 
