@@ -7,21 +7,21 @@ load_dotenv(".env")
 
 @tool
 def write_email(to: str, subject: str, content: str) -> str:
-    """Write and send an email."""
-    # Placeholder response - in real app would send email
+    """撰写并发送邮件。"""
+    # 占位响应：实际应用中会在这里发送邮件
     return f"Email sent to {to} with subject '{subject}' and content: {content}"
 
 llm = get_chat_model(temperature=0)
 model_with_tools = llm.bind_tools([write_email], tool_choice="any")
 
 def call_llm(state: MessagesState) -> MessagesState:
-    """Run LLM"""
+    """调用大语言模型。"""
 
     output = model_with_tools.invoke(state["messages"])
     return {"messages": [output]}
 
 def run_tool(state: MessagesState) -> MessagesState:
-    """Performs the tool call"""
+    """执行工具调用。"""
 
     result = []
     for tool_call in state["messages"][-1].tool_calls:
@@ -30,16 +30,16 @@ def run_tool(state: MessagesState) -> MessagesState:
     return {"messages": result}
 
 def should_continue(state: MessagesState) -> Literal["run_tool", "__end__"]:
-    """Route to tool handler, or end if Done tool called"""
+    """路由到工具处理节点；没有工具调用时结束流程。"""
     
-    # Get the last message
+    # 获取最后一条消息
     messages = state["messages"]
     last_message = messages[-1]
     
-    # If the last message is a tool call, check if it's a Done tool call
+    # 如果最后一条消息包含工具调用，则路由到工具处理节点
     if last_message.tool_calls:
         return "run_tool"
-    # Otherwise, we stop (reply to the user)
+    # 否则结束流程（回复用户）
     return END
 
 workflow = StateGraph(MessagesState)

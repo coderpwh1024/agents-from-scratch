@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict, Literal
+from typing_extensions import Literal, NotRequired, TypedDict
 from langgraph.graph import MessagesState
 
 class RouterSchema(BaseModel):
@@ -14,9 +14,10 @@ class RouterSchema(BaseModel):
         "'respond' for emails that need a reply",
     )
 
-class StateInput(TypedDict):
-    # This is the input to the state
-    email_input: dict
+class StateInput(MessagesState):
+    """Accept either a structured email or Chat UI messages at graph entry."""
+
+    email_input: NotRequired[dict]
 
 class State(MessagesState):
     # This state class has the messages key build in

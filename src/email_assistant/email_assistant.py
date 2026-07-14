@@ -12,21 +12,21 @@ from langgraph.types import Command
 from dotenv import load_dotenv
 load_dotenv(".env")
 
-# Get tools
+# 获取工具
 tools = get_tools()
 tools_by_name = get_tools_by_name(tools)
 
-# Initialize the LLM for use with router / structured output
+# 初始化供路由器/结构化输出使用的 LLM
 llm = get_chat_model(temperature=0.0)
 llm_router = llm.with_structured_output(RouterSchema) 
 
-# Initialize the LLM, enforcing tool use (of any available tools) for agent
+# 初始化 LLM，并要求智能体必须使用某个可用工具
 llm = get_chat_model(temperature=0.0)
 llm_with_tools = llm.bind_tools(tools, tool_choice="any")
 
-# Nodes
+# 节点
 def llm_call(state: State):
-    """LLM decides whether to call a tool or not"""
+    """由 LLM 决定是否调用工具。"""
 
     return {
         "messages": [
@@ -46,7 +46,7 @@ def llm_call(state: State):
     }
 
 def tool_node(state: State):
-    """Performs the tool call"""
+    """执行工具调用。"""
 
     result = []
     for tool_call in state["messages"][-1].tool_calls:
@@ -55,9 +55,9 @@ def tool_node(state: State):
         result.append({"role": "tool", "content" : observation, "tool_call_id": tool_call["id"]})
     return {"messages": result}
 
-# Conditional edge function
+# 条件边函数
 def should_continue(state: State) -> Literal["Action", "__end__"]:
-    """Route to Action, or end if Done tool called"""
+    """路由到 Action；如果调用 Done 工具，则结束流程。"""
     messages = state["messages"]
     last_message = messages[-1]
     if last_message.tool_calls:
@@ -66,39 +66,54 @@ def should_continue(state: State) -> Literal["Action", "__end__"]:
                 return END
             else:
                 return "Action"
+    return END
 
-# Build workflow
+# 构建工作流
 agent_builder = StateGraph(State)
 
-# Add nodes
+# 添加节点
 agent_builder.add_node("llm_call", llm_call)
 agent_builder.add_node("environment", tool_node)
 
-# Add edges to connect nodes
+# 添加边以连接节点
 agent_builder.add_edge(START, "llm_call")
 agent_builder.add_conditional_edges(
     "llm_call",
     should_continue,
     {
-        # Name returned by should_continue : Name of next node to visit
+        # should_continue 返回的名称：下一个要访问的节点名称
         "Action": "environment",
         END: END,
     },
 )
 agent_builder.add_edge("environment", "llm_call")
 
-# Compile the agent
+# 编译智能体
 agent = agent_builder.compile()
 
 def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]:
-    """Analyze email content to decide if we should respond, notify, or ignore.
+    """分析邮件内容，决定是回复、通知还是忽略。
 
-    The triage step prevents the assistant from wasting time on:
-    - Marketing emails and spam
-    - Company-wide announcements
-    - Messages meant for other teams
+    分诊步骤可避免助手在以下邮件上浪费时间：
+    - 营销邮件和垃圾邮件
+    - 面向全公司的公告
+    - 发给其他团队的消息
     """
-    author, to, subject, email_thread = parse_email(state["email_input"])
+    email_input = state.get("email_input")
+    if email_input is None:
+        messages = state.get("messages", [])
+        if not messages:
+            raise ValueError("Provide either email_input or a chat message.")
+
+        content = messages[-1].content
+        email_input = {
+            "author": "Chat user",
+            "to": "Email assistant",
+            "subject": "Chat request",
+            "email_thread": content if isinstance(content, str) else str(content),
+        }
+
+    author, to, subject, email_thread = parse_email(email_input)
     system_prompt = triage_system_prompt.format(
         background=default_background,
         triage_instructions=default_triage_instructions
@@ -108,10 +123,10 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
         author=author, to=to, subject=subject, email_thread=email_thread
     )
 
-    # Create email markdown for Agent Inbox in case of notification  
+    # 创建邮件 Markdown，供通知时展示在智能体收件箱中
     email_markdown = format_email_markdown(subject, author, to, email_thread)
 
-    # Run the router LLM
+    # 运行路由器 LLM
     result = llm_router.invoke(
         [
             {"role": "system", "content": system_prompt},
@@ -119,13 +134,13 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
         ]
     )
 
-    # Decision
+    # 处理决策结果
     classification = result.classification
 
     if classification == "respond":
         print("📧 Classification: RESPOND - This email requires a response")
         goto = "response_agent"
-        # Add the email to the messages
+        # 将邮件添加到消息列表
         update = {
             "classification_decision": result.classification,
             "messages": [{"role": "user",
@@ -139,7 +154,7 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
         }
         goto = END
     elif result.classification == "notify":
-        # If real life, this would do something else
+        # 在实际场景中，这里会执行其他操作
         print("🔔 Classification: NOTIFY - This email contains important information")
         update = {
             "classification_decision": result.classification,
@@ -149,9 +164,9 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto, update=update)
 
-# Build workflow
+# 构建工作流
 overall_workflow = (
-    StateGraph(State, input=StateInput)
+    StateGraph(State, input_schema=StateInput)
     .add_node(triage_router)
     .add_node("response_agent", agent)
     .add_edge(START, "triage_router")
