@@ -2,11 +2,11 @@
 
 import uuid
 import importlib
+import os
 import sys
 import pytest
 from typing import Dict, List, Any, Tuple
 from pydantic import BaseModel, Field
-from langchain.chat_models import init_chat_model
 
 from langsmith import testing as t
 
@@ -15,6 +15,7 @@ from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command
 
 from email_assistant.utils import extract_tool_calls, format_messages_string
+from email_assistant.models import get_chat_model
 from email_assistant.eval.prompts import RESPONSE_CRITERIA_SYSTEM_PROMPT
 
 from dotenv import load_dotenv
@@ -31,7 +32,7 @@ class CriteriaGrade(BaseModel):
     justification: str = Field(description="The justification for the grade and score, including specific examples from the response.")
 
 # Create a global LLM for evaluation to avoid recreating it for each test
-criteria_eval_llm = init_chat_model("openai:gpt-4o")
+criteria_eval_llm = get_chat_model(model=os.getenv("QWEN_EVALUATOR_MODEL"))
 criteria_eval_structured_llm = criteria_eval_llm.with_structured_output(CriteriaGrade)
 
 # Global variables for module name and imported module

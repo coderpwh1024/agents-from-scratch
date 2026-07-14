@@ -17,7 +17,7 @@ python3 --version
 
 ### API Keys
 
-* If you don't have an OpenAI API key, you can sign up [here](https://openai.com/index/openai-api/).
+* 开通[阿里云百炼](https://bailian.console.aliyun.com/)并创建 API Key。
 * Sign up for LangSmith [here](https://smith.langchain.com/).
 * Generate a LangSmith API key.
 
@@ -34,26 +34,32 @@ cp .env.example .env
 LANGSMITH_API_KEY=your_langsmith_api_key
 LANGSMITH_TRACING=true
 LANGSMITH_PROJECT="interrupt-workshop"
-OPENAI_API_KEY=your_openai_api_key
+DASHSCOPE_API_KEY=your_dashscope_api_key
+# 可选：默认使用 qwen-plus
+QWEN_MODEL=qwen-plus
+# 可选：北京地域的百炼 OpenAI 兼容接口为默认值
+# DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
 * You can also set the environment variables in your terminal:
 ```shell
 export LANGSMITH_API_KEY=your_langsmith_api_key
 export LANGSMITH_TRACING=true
-export OPENAI_API_KEY=your_openai_api_key
+export DASHSCOPE_API_KEY=your_dashscope_api_key
 ```
+
+本项目使用 `langchain-openai` 的 `ChatOpenAI` 适配器调用百炼的 OpenAI 兼容接口；它不需要 OpenAI API Key。请确保环境中已安装 `langchain-openai`。
 
 ### Package Installation
 
 **Recommended: Using uv (faster and more reliable)**
 
 ```shell
-# Install uv if you haven't already
-pip install uv
+# Create a virtual environment
+uv venv
 
-# Install the package with development dependencies
-uv sync --extra dev
+# Install project dependencies
+uv pip install -r requirements.txt
 
 # Activate the virtual environment
 source .venv/bin/activate
@@ -64,13 +70,13 @@ source .venv/bin/activate
 ```shell
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-# Ensure you have a recent version of pip (required for editable installs with pyproject.toml)
+# Ensure you have a recent version of pip
 $ python3 -m pip install --upgrade pip
-# Install the package in editable mode
-$ pip install -e .
+# Install project dependencies
+$ pip install -r requirements.txt
 ```
 
-> **⚠️ IMPORTANT**: Do not skip the package installation step! This editable install is **required** for the notebooks to work correctly. The package is installed as `interrupt_workshop` with import name `email_assistant`, allowing you to import from anywhere with `from email_assistant import ...`
+> **⚠️ IMPORTANT**: 安装依赖后，请从项目根目录执行脚本或设置 `PYTHONPATH=src`，以便 Python 能找到 `email_assistant` 包。
 
 ## Structure 
 
@@ -216,4 +222,3 @@ Add [LangMem](https://langchain-ai.github.io/langmem/) to manage memories:
 ```
 
 本项目围绕“逐步增强的邮件助手”组织：`notebooks` 用于分阶段讲解实现思路，`src/email_assistant` 提供可运行的 LangGraph 实现、提示词、工具和评估组件，`tests` 负责验证基础邮件助手与 Notebook。Gmail 的配置和集成代码位于 `src/email_assistant/tools/gmail`。
-

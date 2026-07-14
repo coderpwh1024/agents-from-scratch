@@ -1,12 +1,11 @@
 from typing import Literal
 
-from langchain.chat_models import init_chat_model
-
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.base import BaseStore
 from langgraph.types import interrupt, Command
 
 from email_assistant.tools import get_tools, get_tools_by_name
+from email_assistant.models import get_chat_model
 from email_assistant.tools.default.prompt_templates import HITL_MEMORY_TOOLS_PROMPT
 from email_assistant.prompts import triage_system_prompt, triage_user_prompt, agent_system_prompt_hitl_memory, default_triage_instructions, default_background, default_response_preferences, default_cal_preferences, MEMORY_UPDATE_INSTRUCTIONS, MEMORY_UPDATE_INSTRUCTIONS_REINFORCEMENT
 from email_assistant.schemas import State, RouterSchema, StateInput, UserPreferences
@@ -20,11 +19,11 @@ tools = get_tools(["write_email", "schedule_meeting", "check_calendar_availabili
 tools_by_name = get_tools_by_name(tools)
 
 # Initialize the LLM for use with router / structured output
-llm = init_chat_model("openai:gpt-4.1", temperature=0.0)
+llm = get_chat_model(temperature=0.0)
 llm_router = llm.with_structured_output(RouterSchema) 
 
 # Initialize the LLM, enforcing tool use (of any available tools) for agent
-llm = init_chat_model("openai:gpt-4.1", temperature=0.0)
+llm = get_chat_model(temperature=0.0)
 llm_with_tools = llm.bind_tools(tools, tool_choice="required")
 
 def get_memory(store, namespace, default_content=None):
@@ -66,7 +65,7 @@ def update_memory(store, namespace, messages):
     # Get the existing memory
     user_preferences = store.get(namespace, "user_preferences")
     # Update the memory
-    llm = init_chat_model("openai:gpt-4.1", temperature=0.0).with_structured_output(UserPreferences)
+    llm = get_chat_model(temperature=0.0).with_structured_output(UserPreferences)
     result = llm.invoke(
         [
             {"role": "system", "content": MEMORY_UPDATE_INSTRUCTIONS.format(current_profile=user_preferences.value, namespace=namespace)},

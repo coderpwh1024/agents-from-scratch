@@ -1,0 +1,17 @@
+# 核心 LangGraph 邮件助手
+langchain
+langchain-openai
+langgraph
+langgraph-sdk
+langsmith
+python-dotenv
+pydantic
+html2text
+
+# 评估与测试
+matplotlib
+pytest
+
+# Gmail 集成
+google-api-python-client
+google-auth-oauthlib
