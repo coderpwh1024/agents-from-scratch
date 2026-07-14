@@ -221,5 +221,9 @@ pytest tests/test_notebooks.py -v
     ├── test_response.py              # 工具调用和回复质量测试
     └── test_notebooks.py             # Notebook 执行测试
 ```
+##  LangSmith Studio 运行命令
+ .venv/bin/langgraph dev --no-browser --host 127.0.0.1 --port 8123
+
+
 
 本项目围绕“逐步增强的邮件助手”组织：`notebooks` 用于分阶段讲解实现思路，`src/email_assistant` 提供可运行的 LangGraph 实现、提示词、工具和评估组件，`tests` 负责验证基础邮件助手与 Notebook。Gmail 的配置和集成代码位于 `src/email_assistant/tools/gmail`。

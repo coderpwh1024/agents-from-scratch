@@ -9,7 +9,6 @@
       "cron": "./src/email_assistant/cron.py:graph"
     },
     "python_version": "3.11",
-    "env": ".env",
     "dependencies": [
       "."
     ]

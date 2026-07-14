@@ -19,7 +19,9 @@ from email_assistant.models import get_chat_model
 from email_assistant.eval.prompts import RESPONSE_CRITERIA_SYSTEM_PROMPT
 
 from dotenv import load_dotenv
-load_dotenv(".env", override=True)
+# Keep explicitly configured shell credentials (for example, macOS user
+# environment settings) ahead of placeholder values in the repository .env.
+load_dotenv(".env")
 
 # Force reload the email_dataset module to ensure we get the latest version
 if "email_assistant.eval.email_dataset" in sys.modules:
