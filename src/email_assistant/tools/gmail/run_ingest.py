@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """
-Simple Gmail ingestion script based directly on test.ipynb that works with LangSmith tracing.
+基于 test.ipynb 的简易 Gmail 导入脚本，支持 LangSmith 追踪。
 
-This script provides a minimal implementation for ingesting emails to the LangGraph server,
-with reliable LangSmith tracing.
+此脚本以最小实现将邮件导入 LangGraph 服务器，并提供可靠的 LangSmith 追踪。
 """
 
 import base64
@@ -22,36 +21,36 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Setup paths
+# 设置路径
 _ROOT = Path(__file__).parent.absolute()
 _SECRETS_DIR = _ROOT / ".secrets"
 TOKEN_PATH = _SECRETS_DIR / "token.json"
 
 def extract_message_part(payload):
-    """Extract content from a message part."""
-    # If this is multipart, process with preference for text/plain
+    """从邮件片段中提取内容。"""
+    # 如果这是多部分邮件，优先处理 text/plain 部分
     if payload.get("parts"):
-        # First try to find text/plain part
+        # 先尝试查找 text/plain 部分
         for part in payload["parts"]:
             mime_type = part.get("mimeType", "")
             if mime_type == "text/plain" and part.get("body", {}).get("data"):
                 data = part["body"]["data"]
                 return base64.urlsafe_b64decode(data).decode("utf-8")
                 
-        # If no text/plain found, try text/html
+        # 如果未找到 text/plain，则尝试 text/html
         for part in payload["parts"]:
             mime_type = part.get("mimeType", "")
             if mime_type == "text/html" and part.get("body", {}).get("data"):
                 data = part["body"]["data"]
                 return base64.urlsafe_b64decode(data).decode("utf-8")
                 
-        # If we still haven't found content, recursively check for nested parts
+        # 如果仍未找到内容，则递归检查嵌套部分
         for part in payload["parts"]:
             content = extract_message_part(part)
             if content:
                 return content
     
-    # Not multipart, try to get content directly
+    # 非多部分邮件，直接尝试获取内容
     if payload.get("body", {}).get("data"):
         data = payload["body"]["data"]
         return base64.urlsafe_b64decode(data).decode("utf-8")
@@ -60,45 +59,45 @@ def extract_message_part(payload):
 
 def load_gmail_credentials():
     """
-    Load Gmail credentials from token.json or environment variables.
+    从 token.json 或环境变量加载 Gmail 凭据。
     
-    This function attempts to load credentials from multiple sources in this order:
-    1. Environment variables GMAIL_TOKEN
-    2. Local file at token_path (.secrets/token.json)
+    此函数会按以下顺序尝试从多个来源加载凭据：
+    1. 环境变量 GMAIL_TOKEN
+    2. 本地文件 token_path（.secrets/token.json）
     
-    Returns:
-        Google OAuth2 Credentials object or None if credentials can't be loaded
+    返回：
+        Google OAuth2 Credentials 对象；无法加载凭据时返回 None
     """
     token_data = None
     
-    # 1. Try environment variable
+    # 1. 尝试环境变量
     env_token = os.getenv("GMAIL_TOKEN")
     if env_token:
         try:
             token_data = json.loads(env_token)
-            print("Using GMAIL_TOKEN environment variable")
+            print("正在使用 GMAIL_TOKEN 环境变量")
         except Exception as e:
-            print(f"Could not parse GMAIL_TOKEN environment variable: {str(e)}")
+            print(f"无法解析 GMAIL_TOKEN 环境变量：{str(e)}")
     
-    # 2. Try local file as fallback
+    # 2. 回退至本地文件
     if token_data is None:
         if TOKEN_PATH.exists():
             try:
                 with open(TOKEN_PATH, "r") as f:
                     token_data = json.load(f)
-                print(f"Using token from {TOKEN_PATH}")
+                print(f"正在使用 {TOKEN_PATH} 中的令牌")
             except Exception as e:
-                print(f"Could not load token from {TOKEN_PATH}: {str(e)}")
+                print(f"无法从 {TOKEN_PATH} 加载令牌：{str(e)}")
         else:
-            print(f"Token file not found at {TOKEN_PATH}")
+            print(f"未找到令牌文件：{TOKEN_PATH}")
     
-    # If we couldn't get token data from any source, return None
+    # 如果无法从任何来源获得令牌数据，则返回 None
     if token_data is None:
-        print("Could not find valid token data in any location")
+        print("未在任何位置找到有效的令牌数据")
         return None
     
     try:
-        # Create credentials object
+        # 创建凭据对象
         credentials = Credentials(
             token=token_data.get("token"),
             refresh_token=token_data.get("refresh_token"),
@@ -109,23 +108,23 @@ def load_gmail_credentials():
         )
         return credentials
     except Exception as e:
-        print(f"Error creating credentials object: {str(e)}")
+        print(f"创建凭据对象时出错：{str(e)}")
         return None
 
 def extract_email_data(message):
-    """Extract key information from a Gmail message."""
+    """从 Gmail 邮件中提取关键信息。"""
     headers = message['payload']['headers']
     
-    # Extract key headers
-    subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
-    from_email = next((h['value'] for h in headers if h['name'] == 'From'), 'Unknown Sender')
-    to_email = next((h['value'] for h in headers if h['name'] == 'To'), 'Unknown Recipient')
-    date = next((h['value'] for h in headers if h['name'] == 'Date'), 'Unknown Date')
+    # 提取关键邮件头
+    subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '无主题')
+    from_email = next((h['value'] for h in headers if h['name'] == 'From'), '未知发件人')
+    to_email = next((h['value'] for h in headers if h['name'] == 'To'), '未知收件人')
+    date = next((h['value'] for h in headers if h['name'] == 'Date'), '未知日期')
     
-    # Extract message content
+    # 提取邮件正文
     content = extract_message_part(message['payload'])
     
-    # Create email data object
+    # 创建邮件数据对象
     email_data = {
         "from_email": from_email,
         "to_email": to_email,
@@ -139,50 +138,50 @@ def extract_email_data(message):
     return email_data
 
 async def ingest_email_to_langgraph(email_data, graph_name, url="http://127.0.0.1:2024"):
-    """Ingest an email to LangGraph."""
-    # Connect to LangGraph server
+    """将邮件导入 LangGraph。"""
+    # 连接到 LangGraph 服务器
     client = get_client(url=url)
     
-    # Create a consistent UUID for the thread
+    # 为线程创建稳定一致的 UUID
     raw_thread_id = email_data["thread_id"]
     thread_id = str(
         uuid.UUID(hex=hashlib.md5(raw_thread_id.encode("UTF-8")).hexdigest())
     )
-    print(f"Gmail thread ID: {raw_thread_id} → LangGraph thread ID: {thread_id}")
+    print(f"Gmail 线程 ID：{raw_thread_id} → LangGraph 线程 ID：{thread_id}")
     
     thread_exists = False
     try:
-        # Try to get existing thread info
+        # 尝试获取已有线程信息
         thread_info = await client.threads.get(thread_id)
         thread_exists = True
-        print(f"Found existing thread: {thread_id}")
+        print(f"找到已有线程：{thread_id}")
     except Exception as e:
-        # If thread doesn't exist, create it
-        print(f"Creating new thread: {thread_id}")
+        # 如果线程不存在，则创建它
+        print(f"正在创建新线程：{thread_id}")
         thread_info = await client.threads.create(thread_id=thread_id)
     
-    # If thread exists, clean up previous runs
+    # 如果线程已存在，清理先前的运行记录
     if thread_exists:
         try:
-            # List all runs for this thread
+            # 列出该线程的所有运行记录
             runs = await client.runs.list(thread_id)
             
-            # Delete all previous runs to avoid state accumulation
+            # 删除所有先前运行记录，避免状态累积
             for run_info in runs:
                 run_id = run_info.id
-                print(f"Deleting previous run {run_id} from thread {thread_id}")
+                print(f"正在删除线程 {thread_id} 中之前的运行记录 {run_id}")
                 try:
                     await client.runs.delete(thread_id, run_id)
                 except Exception as e:
-                    print(f"Failed to delete run {run_id}: {str(e)}")
+                    print(f"删除运行记录 {run_id} 失败：{str(e)}")
         except Exception as e:
-            print(f"Error listing/deleting runs: {str(e)}")
+            print(f"列出或删除运行记录时出错：{str(e)}")
     
-    # Update thread metadata with current email ID
+    # 使用当前邮件 ID 更新线程元数据
     await client.threads.update(thread_id, metadata={"email_id": email_data["id"]})
     
-    # Create a fresh run for this email
-    print(f"Creating run for thread {thread_id} with graph {graph_name}")
+    # 为该邮件创建新的运行记录
+    print(f"正在使用图 {graph_name} 为线程 {thread_id} 创建运行记录")
     
     run = await client.runs.create(
         thread_id,
@@ -197,77 +196,77 @@ async def ingest_email_to_langgraph(email_data, graph_name, url="http://127.0.0.
         multitask_strategy="rollback",
     )
     
-    print(f"Run created successfully with thread ID: {thread_id}")
+    print(f"已成功创建运行记录，线程 ID：{thread_id}")
     
     return thread_id, run
 
 async def fetch_and_process_emails(args):
-    """Fetch emails from Gmail and process them through LangGraph."""
-    # Load Gmail credentials
+    """从 Gmail 获取邮件并通过 LangGraph 处理。"""
+    # 加载 Gmail 凭据
     credentials = load_gmail_credentials()
     if not credentials:
-        print("Failed to load Gmail credentials")
+        print("加载 Gmail 凭据失败")
         return 1
         
-    # Build Gmail service
+    # 构建 Gmail 服务
     service = build("gmail", "v1", credentials=credentials)
     
-    # Process emails
+    # 处理邮件
     processed_count = 0
     
     try:
-        # Get messages from the specified email address
+        # 获取与指定邮箱地址相关的邮件
         email_address = args.email
         
-        # Construct Gmail search query
+        # 构造 Gmail 搜索查询
         query = f"to:{email_address} OR from:{email_address}"
         
-        # Add time constraint if specified
+        # 如有指定，添加时间限制
         if args.minutes_since > 0:
-            # Calculate timestamp for filtering
+            # 计算用于筛选的时间戳
             from datetime import timedelta
             after = int((datetime.now() - timedelta(minutes=args.minutes_since)).timestamp())
             query += f" after:{after}"
             
-        # Only include unread emails unless include_read is True
+        # 除非 include_read 为 True，否则只包含未读邮件
         if not args.include_read:
             query += " is:unread"
             
-        print(f"Gmail search query: {query}")
+        print(f"Gmail 搜索查询：{query}")
         
-        # Execute the search
+        # 执行搜索
         results = service.users().messages().list(userId="me", q=query).execute()
         messages = results.get("messages", [])
         
         if not messages:
-            print("No emails found matching the criteria")
+            print("未找到符合条件的邮件")
             return 0
             
-        print(f"Found {len(messages)} emails")
+        print(f"找到 {len(messages)} 封邮件")
         
-        # Process each email
+        # 逐封处理邮件
         for i, message_info in enumerate(messages):
-            # Stop early if requested
+            # 如有要求则提前停止
             if args.early and i > 0:
-                print(f"Early stop after processing {i} emails")
+                print(f"处理 {i} 封邮件后提前停止")
                 break
                 
-            # Check if we should reprocess this email
+            # 检查是否应重新处理该邮件
             if not args.rerun:
-                # TODO: Add check for already processed emails
+                # TODO：增加对已处理邮件的检查
                 pass
                 
-            # Get the full message
+            # 获取完整邮件
             message = service.users().messages().get(userId="me", id=message_info["id"]).execute()
             
-            # Extract email data
+            # 提取邮件数据
             email_data = extract_email_data(message)
             
-            print(f"\nProcessing email {i+1}/{len(messages)}:")
-            print(f"From: {email_data['from_email']}")
-            print(f"Subject: {email_data['subject']}")
+            print(f"\n正在处理邮件 {i+1}/{len(messages)}：")
+            print(f"发件人：{email_data['from_email']}")
+            print(f"主题：{email_data['subject']}")
             
-            # Ingest to LangGraph
+            # 导入到 LangGraph
             thread_id, run = await ingest_email_to_langgraph(
                 email_data, 
                 args.graph_name,
@@ -276,66 +275,66 @@ async def fetch_and_process_emails(args):
             
             processed_count += 1
             
-        print(f"\nProcessed {processed_count} emails successfully")
+        print(f"\n已成功处理 {processed_count} 封邮件")
         return 0
         
     except Exception as e:
-        print(f"Error processing emails: {str(e)}")
+        print(f"处理邮件时出错：{str(e)}")
         return 1
 
 def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Simple Gmail ingestion for LangGraph with reliable tracing")
+    """解析命令行参数。"""
+    parser = argparse.ArgumentParser(description="带可靠追踪功能的 LangGraph 简易 Gmail 导入工具")
     
     parser.add_argument(
         "--email", 
         type=str, 
         required=True,
-        help="Email address to fetch messages for"
+        help="要获取邮件的邮箱地址"
     )
     parser.add_argument(
         "--minutes-since", 
         type=int, 
         default=120,
-        help="Only retrieve emails newer than this many minutes"
+        help="仅获取在指定分钟数内收到的邮件"
     )
     parser.add_argument(
         "--graph-name", 
         type=str, 
         default="email_assistant_hitl_memory_gmail",
-        help="Name of the LangGraph to use"
+        help="要使用的 LangGraph 名称"
     )
     parser.add_argument(
         "--url", 
         type=str, 
         default="http://127.0.0.1:2024",
-        help="URL of the LangGraph deployment"
+        help="LangGraph 部署的 URL"
     )
     parser.add_argument(
         "--early", 
         action="store_true",
-        help="Early stop after processing one email"
+        help="处理一封邮件后提前停止"
     )
     parser.add_argument(
         "--include-read",
         action="store_true",
-        help="Include emails that have already been read"
+        help="包含已读邮件"
     )
     parser.add_argument(
         "--rerun", 
         action="store_true",
-        help="Process the same emails again even if already processed"
+        help="即使邮件已处理过，也再次处理"
     )
     parser.add_argument(
         "--skip-filters",
         action="store_true",
-        help="Skip filtering of emails"
+        help="跳过邮件筛选"
     )
     return parser.parse_args()
 
 if __name__ == "__main__":
-    # Get command line arguments
+    # 获取命令行参数
     args = parse_args()
     
-    # Run the script
+    # 运行脚本
     exit(asyncio.run(fetch_and_process_emails(args)))

@@ -1,23 +1,23 @@
-"""Tool prompt templates for Gmail integration."""
+"""Gmail 集成的工具提示词模板。"""
 
-# Gmail tools prompt for insertion into agent system prompts
+# 用于插入智能体系统提示词的 Gmail 工具提示词
 GMAIL_TOOLS_PROMPT = """
-1. fetch_emails_tool(email_address, minutes_since) - Fetch recent emails from Gmail
-2. send_email_tool(email_id, response_text, email_address, additional_recipients) - Send a reply to an email thread
-3. check_calendar_tool(dates) - Check Google Calendar availability for specific dates
-4. schedule_meeting_tool(attendees, title, start_time, end_time, organizer_email, timezone) - Schedule a meeting and send invites
-5. triage_email(ignore, notify, respond) - Triage emails into one of three categories
-6. Done - E-mail has been sent
+1. fetch_emails_tool(email_address, minutes_since) - 从 Gmail 获取近期邮件
+2. send_email_tool(email_id, response_text, email_address, additional_recipients) - 回复邮件会话
+3. check_calendar_tool(dates) - 查询指定日期的 Google 日历空闲情况
+4. schedule_meeting_tool(attendees, title, start_time, end_time, organizer_email, timezone) - 安排会议并发送邀请
+5. triage_email(ignore, notify, respond) - 将邮件分诊为三类之一
+6. Done - 邮件已发送
 """
 
-# Combined tools prompt (default + Gmail) for full integration
+# 完整集成使用的组合工具提示词（默认工具 + Gmail）
 COMBINED_TOOLS_PROMPT = """
-1. fetch_emails_tool(email_address, minutes_since) - Fetch recent emails from Gmail
-2. send_email_tool(email_id, response_text, email_address, additional_recipients) - Send a reply to an email thread
-3. check_calendar_tool(dates) - Check Google Calendar availability for specific dates
-4. schedule_meeting_tool(attendees, title, start_time, end_time, organizer_email, timezone) - Schedule a meeting and send invites
-5. write_email(to, subject, content) - Draft emails to specified recipients
-6. triage_email(ignore, notify, respond) - Triage emails into one of three categories
-7. check_calendar_availability(day) - Check available time slots for a given day
-8. Done - E-mail has been sent
+1. fetch_emails_tool(email_address, minutes_since) - 从 Gmail 获取近期邮件
+2. send_email_tool(email_id, response_text, email_address, additional_recipients) - 回复邮件会话
+3. check_calendar_tool(dates) - 查询指定日期的 Google 日历空闲情况
+4. schedule_meeting_tool(attendees, title, start_time, end_time, organizer_email, timezone) - 安排会议并发送邀请
+5. write_email(to, subject, content) - 为指定收件人起草邮件
+6. triage_email(ignore, notify, respond) - 将邮件分诊为三类之一
+7. check_calendar_availability(day) - 查询指定日期的可用时段
+8. Done - 邮件已发送
 """
