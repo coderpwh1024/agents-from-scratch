@@ -129,7 +129,7 @@ def parse_email(email_input: dict) -> dict:
         email_input["email_thread"],
     )
 
-def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str]:
+def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str | None]:
     """Parse an email input dictionary for Gmail, including the email ID.
     
     This function extends parse_email by also returning the email ID,
@@ -150,11 +150,16 @@ def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str]:
             - to: Recipient's name and email
             - subject: Email subject line
             - email_thread: Full email content
-            - email_id: Email ID (or None if not available)
+            - email_id: Email ID (or None for a Studio Chat request)
     """
 
-    print("!Email_input from Gmail!")
-    print(email_input)
+    required_fields = ("from", "to", "subject", "body")
+    missing_fields = [field for field in required_fields if field not in email_input]
+    if missing_fields:
+        raise ValueError(
+            "Invalid Gmail email_input; missing required field(s): "
+            + ", ".join(missing_fields)
+        )
 
     # Gmail schema
     return (
@@ -162,7 +167,7 @@ def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str]:
         email_input["to"],
         email_input["subject"],
         email_input["body"],
-        email_input["id"],
+        email_input.get("id"),
     )
     
 def extract_message_content(message) -> str:
