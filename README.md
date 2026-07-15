@@ -221,8 +221,147 @@ pytest tests/test_notebooks.py -v
     ├── test_response.py              # 工具调用和回复质量测试
     └── test_notebooks.py             # Notebook 执行测试
 ```
-##  LangSmith Studio 运行命令
- .venv/bin/langgraph dev --no-browser --host 127.0.0.1 --port 8123
+## 在 LangGraph Studio 中体验图
+
+`langgraph.json` 已注册以下五个图。启动本地 LangGraph Server 后，在浏览器打开终端输出的 Studio 地址，在左侧选择图并创建一个新的 Thread 即可运行。建议每次验证都新建 Thread，以便单独查看状态、轨迹和中断。
+
+```shell
+# 推荐：使用 uv
+uv run langgraph dev
+
+# 或使用已创建的虚拟环境
+.venv/bin/langgraph dev --no-browser --host 127.0.0.1 --port 8123
+```
+
+运行前请确认根目录 `.env` 已配置 `DASHSCOPE_API_KEY`。若需要将轨迹上传到 LangSmith，还需配置 `LANGSMITH_API_KEY`、`LANGSMITH_TRACING=true` 和 `LANGSMITH_PROJECT`。
+
+### 1. LangGraph 101：`langgraph_101.py`
+
+在 Studio 中选择图 `langgraph101`。该示例用于体验模型调用、条件分支和工具节点；其中 `write_email` 是占位工具，不会真实发送邮件。
+
+输入：
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "请给 alice@example.com 写一封主题为“项目更新”的邮件，内容是“项目已完成第一阶段”。"
+    }
+  ]
+}
+```
+
+预期路径为 `START → call_llm → run_tool → END`。在 State 或 Trace 面板检查 `messages` 中是否出现模型的 `tool_calls`，以及 `run_tool` 是否返回 `Email sent ...`。
+
+### 2. 基础邮件助手：`email_assistant.py`
+
+在 Studio 中选择图 `email_assistant`。该图会先分诊邮件，再决定是否进入回复智能体并调用模拟的邮件或日历工具。
+
+使用以下格式输入一封需要回复的邮件：
+
+```json
+{
+  "email_input": {
+    "author": "Alice <alice@example.com>",
+    "to": "你 <me@example.com>",
+    "subject": "Project status",
+    "email_thread": "Could you send me the current project status by Friday?"
+  }
+}
+```
+
+重点观察 `triage_router` 写入的 `classification_decision`：
+
+* `respond`：进入 `response_agent`，生成回复或调用日历相关工具。
+* `ignore`：直接结束。可使用促销邮件验证：
+
+  ```json
+  {
+    "email_input": {
+      "author": "Marketing <promo@example.com>",
+      "to": "你 <me@example.com>",
+      "subject": "限时优惠！",
+      "email_thread": "点击链接立刻领取折扣。"
+    }
+  }
+  ```
+
+* `notify`：直接结束，但会保留分类结果；可用重要但不需要回复的公司公告验证。
+
+### 3. 人工介入：`email_assistant_hitl.py`
+
+在 Studio 中选择图 `email_assistant_hitl`，使用与基础邮件助手相同的 `email_input` 格式。例如：
+
+```json
+{
+  "email_input": {
+    "author": "Alice <alice@example.com>",
+    "to": "你 <me@example.com>",
+    "subject": "下周开会",
+    "email_thread": "我们能否下周二安排 30 分钟讨论项目？"
+  }
+}
+```
+
+当模型拟定邮件、会议或需要向用户提问时，Thread 会进入 **Interrupted** 状态。在 Studio 的 Interrupt/Resume 区域体验人工决策：
+
+* `accept`：接受模型的邮件草稿或会议参数；
+* `edit`：修改收件人、主题、正文或会议参数后执行；
+* `response`：给出反馈，例如“改成周三上午，并用更简短的语气”，让智能体继续处理；
+* `ignore`：拒绝该操作并结束流程。
+
+还可输入一封重要但无须立即回复的公告，体验分诊阶段触发的人工中断：选择回复并提供反馈，或直接忽略。
+
+### 4. 记忆型人工介入：`email_assistant_hitl_memory.py`
+
+在 Studio 中选择图 `email_assistant_hitl_memory`。先运行一封需要回复的邮件，在人工中断时通过 `response` 提供明确偏好：
+
+```text
+以后邮件回复保持两句话以内，语气直接；落款使用“谢谢，王明”。
+```
+
+随后在 Studio 的 **Memory** 面板确认记忆已创建或更新。主要命名空间如下：
+
+```text
+email_assistant / response_preferences
+email_assistant / triage_preferences
+email_assistant / cal_preferences
+```
+
+再创建一个新 Thread，提交另一封需要回复的邮件，检查新草稿是否采用“简短、直接、指定落款”的偏好。当前实现的记忆命名空间没有用户隔离，因此本地所有 Thread 会共享这些偏好；测试结束后可在 Memory 面板删除测试数据。
+
+### 5. Gmail 集成：`email_assistant_hitl_memory_gmail.py`
+
+在 Studio 中选择图 `email_assistant_hitl_memory_gmail`。运行前必须按 [Gmail 工具配置说明](src/email_assistant/tools/gmail/README.md) 完成 Google OAuth：
+
+```shell
+python src/email_assistant/tools/gmail/setup_gmail.py
+```
+
+Gmail 图的输入字段与前面不同，必须带有 Gmail 邮件 ID：
+
+```json
+{
+  "email_input": {
+    "from": "Alice <alice@example.com>",
+    "to": "你的 Gmail 地址",
+    "subject": "请确认会议时间",
+    "body": "请确认下周二上午十点是否方便。",
+    "id": "GMAIL_MESSAGE_ID"
+  }
+}
+```
+
+首次请使用测试 Gmail 账号和测试邮件，并优先在人工中断中选择 `ignore` 或 `edit`。确认 OAuth、记忆和人工介入均正常后，再使用 `accept` 执行真实的发信或创建日程操作。最后检查流程是否经过 `mark_as_read_node`，以及目标邮件是否已标记为已读。
+
+若希望自动从真实 Gmail 取邮件并提交到本地 Server，可在 `langgraph dev` 运行期间另开一个终端执行：
+
+```shell
+uv run python src/email_assistant/tools/gmail/run_ingest.py \
+  --email your-test-address@gmail.com \
+  --minutes-since 60
+```
 
 
 
