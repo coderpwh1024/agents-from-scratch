@@ -84,8 +84,32 @@ def triage_router(state: State, store: BaseStore) -> Command[Literal["triage_int
     - Messages meant for other teams
     """
     
-    # Parse the email input
-    author, to, subject, email_thread = parse_email(state["email_input"])
+    # Studio can start a graph with either the structured email input or a
+    # chat message. Normalize chat input here and persist it in state because
+    # later HITL nodes also need the original email.
+    email_input = state.get("email_input")
+    if email_input is None:
+        messages = state.get("messages", [])
+        if not messages:
+            raise ValueError(
+                "Provide email_input or a chat message in messages."
+            )
+
+        last_message = messages[-1]
+        content = (
+            last_message.content
+            if hasattr(last_message, "content")
+            else last_message["content"]
+        )
+        email_input = {
+            "author": "Chat user",
+            "to": "Email assistant",
+            "subject": "Chat request",
+            "email_thread": content if isinstance(content, str) else str(content),
+        }
+
+    # Parse the normalized email input.
+    author, to, subject, email_thread = parse_email(email_input)
     user_prompt = triage_user_prompt.format(
         author=author, to=to, subject=subject, email_thread=email_thread
     )
@@ -120,6 +144,7 @@ def triage_router(state: State, store: BaseStore) -> Command[Literal["triage_int
         goto = "response_agent"
         # Update the state
         update = {
+            "email_input": email_input,
             "classification_decision": result.classification,
             "messages": [{"role": "user",
                             "content": f"Respond to the email: {email_markdown}"
@@ -133,6 +158,7 @@ def triage_router(state: State, store: BaseStore) -> Command[Literal["triage_int
         goto = END
         # Update the state
         update = {
+            "email_input": email_input,
             "classification_decision": classification,
         }
 
@@ -143,6 +169,7 @@ def triage_router(state: State, store: BaseStore) -> Command[Literal["triage_int
         goto = "triage_interrupt_handler"
         # Update the state
         update = {
+            "email_input": email_input,
             "classification_decision": classification,
         }
 
