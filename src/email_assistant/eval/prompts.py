@@ -1,4 +1,4 @@
-# Used in /eval/evaluate_triage.py
+# 供 /eval/evaluate_triage.py 使用
 TRIAGE_CLASSIFICATION_PROMPT = """
 
 <Task>
@@ -30,7 +30,7 @@ Your job is to evaluate the agent's reasoning and decision relative to the corre
 </correct_classification>
 """
 
-# Used in /tests/test_email_assistant.py
+# 供 /tests/test_email_assistant.py 使用
 RESPONSE_CRITERIA_SYSTEM_PROMPT = """You are evaluating an email assistant that works on behalf of a user.
 
 You will see a sequence of messages, starting with an email sent to the user. 
@@ -53,12 +53,12 @@ IMPORTANT EVALUATION INSTRUCTIONS:
 
 Your output will be used for automated testing, so maintain a consistent evaluation approach."""
 
-# Used in /tests/test_hitl.py
+# 供 /tests/test_hitl.py 使用
 HITL_FEEDBACK_SYSTEM_PROMPT = """You are evaluating an email assistant's response to determine if it meets specific criteria.
 
 This is an email assistant that is used to respond to emails. Review our initial email response and the user feedback given to update the email response. Here is the feedback: {feedback}. Assess whether the final email response addresses the feedback that we gave."""
 
-# Used in /tests/test_memory.py
+# 供 /tests/test_memory.py 使用
 MEMORY_UPDATE_SYSTEM_PROMPT = """This is an email assistant that uses memory to update its response preferences. 
 
 Review the initial response preferences and the updated response preferences. Assess whether the updated response preferences are more accurate than the initial response preferences."""

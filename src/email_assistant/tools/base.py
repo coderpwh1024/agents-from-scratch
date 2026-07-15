@@ -2,20 +2,20 @@ from typing import Dict, List, Callable, Any, Optional
 from langchain_core.tools import BaseTool
 
 def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = False) -> List[BaseTool]:
-    """Get specified tools or all tools if tool_names is None.
+    """获取指定工具；当 ``tool_names`` 为 ``None`` 时返回全部工具。
     
     Args:
-        tool_names: Optional list of tool names to include. If None, returns all tools.
-        include_gmail: Whether to include Gmail tools. Defaults to False.
+        tool_names: 要包含的可选工具名称列表。若为 ``None``，则返回全部工具。
+        include_gmail: 是否包含 Gmail 工具。默认为 ``False``。
         
     Returns:
-        List of tool objects
+        工具对象列表。
     """
-    # Import default tools
+    # 导入默认工具
     from email_assistant.tools.default.email_tools import write_email, Done, Question
     from email_assistant.tools.default.calendar_tools import schedule_meeting, check_calendar_availability
     
-    # Base tools dictionary
+    # 基础工具字典
     all_tools = {
         "write_email": write_email,
         "Done": Done,
@@ -24,7 +24,7 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
         "check_calendar_availability": check_calendar_availability,
     }
     
-    # Add Gmail tools if requested
+    # 按需添加 Gmail 工具
     if include_gmail:
         try:
             from email_assistant.tools.gmail.gmail_tools import (
@@ -41,7 +41,7 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
                 "schedule_meeting_tool": schedule_meeting_tool,
             })
         except ImportError:
-            # If Gmail tools aren't available, continue without them
+            # Gmail 工具不可用时，继续执行但不包含它们
             pass
     
     if tool_names is None:
@@ -50,7 +50,7 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
     return [all_tools[name] for name in tool_names if name in all_tools]
 
 def get_tools_by_name(tools: Optional[List[BaseTool]] = None) -> Dict[str, BaseTool]:
-    """Get a dictionary of tools mapped by name."""
+    """获取一个以工具名称为键、工具对象为值的字典。"""
     if tools is None:
         tools = get_tools()
     

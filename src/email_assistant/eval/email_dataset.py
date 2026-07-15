@@ -1,6 +1,6 @@
-"""Email evaluation dataset with ground truth classifications."""
+"""包含真实分类标注的邮件评估数据集。"""
 
-# Common reply email
+# 常见的回复邮件
 STANDARD_EMAIL = {
     "author": "Alice Smith <alice.smith@company.com>",
     "to": "John Doe <john.doe@company.com>",
@@ -17,7 +17,7 @@ Thanks!
 Alice""",
 }
 
-# Common notification email
+# 常见的通知邮件
 NOTIFICATION_EMAIL = {
     "author": "System Admin <sysadmin@company.com>",
     "to": "Development Team <dev@company.com>",
@@ -32,7 +32,7 @@ Thanks,
 System Admin Team"""
 }
 
-# Dataset examples
+# 数据集示例
 email_input_1 = {
     "author": "Alice Smith <alice.smith@company.com>",
     "to": "Lance Martin <lance@company.com>",
@@ -280,7 +280,7 @@ Thanks,
 Marketing Team""",
 }
 
-# Triage outputs: "ignore", "notify", "respond"
+# 分流输出："ignore"、"notify"、"respond"
 triage_output_1 = "respond"
 triage_output_2 = "ignore"
 triage_output_3 = "notify"
@@ -298,7 +298,7 @@ triage_output_14 = "ignore"
 triage_output_15 = "respond"
 triage_output_16 = "notify"
 
-# Response criteria (when applicable)
+# 回复标准（如适用）
 response_criteria_1 = """
 • Send email with write_email tool call to acknowledge the question and confirm it will be investigated  
 """
@@ -478,23 +478,23 @@ triage_outputs_list = [
     triage_output_16
 ]
 
-# Define expected tool calls for each email response based on content analysis
-# Options: write_email, schedule_meeting, check_calendar_availability, done
+# 根据内容分析，为每封邮件回复定义预期的工具调用。
+# 可选项：write_email、schedule_meeting、check_calendar_availability、done
 expected_tool_calls = [
-    ["write_email", "done"],                                                 # email_input_1: API documentation question
-    [],                                                                      # email_input_2: Newsletter notification - ignore
-    [],                                                                      # email_input_3: System maintenance notification - notification only
-    ["check_calendar_availability", "schedule_meeting", "write_email", "done"], # email_input_4: Tax call scheduling
-    [],                                                                      # email_input_5: Expense report reminder - notification only
-    ["write_email", "done"],                                                 # email_input_6: Conference invitation - needs response
-    ["write_email", "done"],                                                 # email_input_7: Document review request
-    ["write_email", "done"],                                                 # email_input_8: Swimming class registration
-    [],                                                                      # email_input_9: GitHub PR comment - notification only
-    ["check_calendar_availability", "write_email", "done"], # email_input_10: Planning meeting
-    [],                                                                      # email_input_11: AWS alert - notification only
-    [],                                                                      # email_input_12: Subscription renewal - ignore
-    ["write_email", "done"],                                                 # email_input_13: Doctor appointment reminder
-    [],                                                                      # email_input_14: Social media notification - no action needed
-    ["check_calendar_availability", "schedule_meeting", "write_email", "done"], # email_input_15: Joint presentation
-    [],                                                                      # email_input_16: Newsletter - notification only
+    ["write_email", "done"],  # email_input_1：API 文档问题
+    [],  # email_input_2：新闻通讯通知——忽略
+    [],  # email_input_3：系统维护通知——仅通知
+    ["check_calendar_availability", "schedule_meeting", "write_email", "done"],  # email_input_4：安排税务电话会议
+    [],  # email_input_5：费用报销提醒——仅通知
+    ["write_email", "done"],  # email_input_6：会议邀请——需要回复
+    ["write_email", "done"],  # email_input_7：文档审阅请求
+    ["write_email", "done"],  # email_input_8：游泳课报名
+    [],  # email_input_9：GitHub PR 评论——仅通知
+    ["check_calendar_availability", "write_email", "done"],  # email_input_10：规划会议
+    [],  # email_input_11：AWS 告警——仅通知
+    [],  # email_input_12：订阅续费——忽略
+    ["write_email", "done"],  # email_input_13：医生预约提醒
+    [],  # email_input_14：社交媒体通知——无需操作
+    ["check_calendar_availability", "schedule_meeting", "write_email", "done"],  # email_input_15：联合演示
+    [],  # email_input_16：新闻通讯——仅通知
 ]

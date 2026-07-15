@@ -5,7 +5,7 @@ from langchain_core.tools import tool
 @tool
 def write_email(to: str, subject: str, content: str) -> str:
     """Write and send an email."""
-    # Placeholder response - in real app would send email
+    # 占位响应：真实应用中会发送邮件
     return f"Email sent to {to} with subject '{subject}' and content: {content}"
 
 @tool
