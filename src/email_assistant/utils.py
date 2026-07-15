@@ -3,22 +3,22 @@ import json
 import html2text
 
 def format_email_markdown(subject, author, to, email_thread, email_id=None):
-    """Format email details into a nicely formatted markdown string for display
+    """将邮件详情格式化为便于展示的 Markdown 字符串。
     
     Args:
-        subject: Email subject
-        author: Email sender
-        to: Email recipient
-        email_thread: Email content
-        email_id: Optional email ID (for Gmail API)
+        subject: 邮件主题
+        author: 邮件发件人
+        to: 邮件收件人
+        email_thread: 邮件内容
+        email_id: 可选的邮件 ID（供 Gmail API 使用）
     """
     id_section = f"\n**ID**: {email_id}" if email_id else ""
     
     return f"""
 
-**Subject**: {subject}
-**From**: {author}
-**To**: {to}{id_section}
+**主题**: {subject}
+**发件人**: {author}
+**收件人**: {to}{id_section}
 
 {email_thread}
 
@@ -26,34 +26,34 @@ def format_email_markdown(subject, author, to, email_thread, email_id=None):
 """
 
 def format_gmail_markdown(subject, author, to, email_thread, email_id=None):
-    """Format Gmail email details into a nicely formatted markdown string for display,
-    with HTML to text conversion for HTML content
+    """将 Gmail 邮件详情格式化为便于展示的 Markdown 字符串，
+    并将 HTML 内容转换为文本。
     
     Args:
-        subject: Email subject
-        author: Email sender
-        to: Email recipient
-        email_thread: Email content (possibly HTML)
-        email_id: Optional email ID (for Gmail API)
+        subject: 邮件主题
+        author: 邮件发件人
+        to: 邮件收件人
+        email_thread: 邮件内容（可能为 HTML）
+        email_id: 可选的邮件 ID（供 Gmail API 使用）
     """
     id_section = f"\n**ID**: {email_id}" if email_id else ""
     
-    # Check if email_thread is HTML content and convert to text if needed
+    # 检查 email_thread 是否为 HTML 内容，并在需要时转换为文本
     if email_thread and (email_thread.strip().startswith("<!DOCTYPE") or 
                           email_thread.strip().startswith("<html") or
                           "<body" in email_thread):
-        # Convert HTML to markdown text
+        # 将 HTML 转换为 Markdown 文本
         h = html2text.HTML2Text()
         h.ignore_links = False
         h.ignore_images = True
-        h.body_width = 0  # Don't wrap text
+        h.body_width = 0  # 不换行
         email_thread = h.handle(email_thread)
     
     return f"""
 
-**Subject**: {subject}
-**From**: {author}
-**To**: {to}{id_section}
+**主题**: {subject}
+**发件人**: {author}
+**收件人**: {to}{id_section}
 
 {email_thread}
 
@@ -61,44 +61,44 @@ def format_gmail_markdown(subject, author, to, email_thread, email_id=None):
 """
 
 def format_for_display(tool_call):
-    """Format content for display in Agent Inbox
+    """格式化将在智能体收件箱中展示的内容。
     
     Args:
-        tool_call: The tool call to format
+        tool_call: 要格式化的工具调用
     """
-    # Initialize empty display
+    # 初始化空展示内容
     display = ""
     
-    # Add tool call information
+    # 添加工具调用信息
     if tool_call["name"] == "write_email":
-        display += f"""# Email Draft
+        display += f"""# 邮件草稿
 
-**To**: {tool_call["args"].get("to")}
-**Subject**: {tool_call["args"].get("subject")}
+**收件人**: {tool_call["args"].get("to")}
+**主题**: {tool_call["args"].get("subject")}
 
 {tool_call["args"].get("content")}
 """
     elif tool_call["name"] == "schedule_meeting":
-        display += f"""# Calendar Invite
+        display += f"""# 日历邀请
 
-**Meeting**: {tool_call["args"].get("subject")}
-**Attendees**: {', '.join(tool_call["args"].get("attendees"))}
-**Duration**: {tool_call["args"].get("duration_minutes")} minutes
-**Day**: {tool_call["args"].get("preferred_day")}
+**会议**: {tool_call["args"].get("subject")}
+**参会者**: {', '.join(tool_call["args"].get("attendees"))}
+**时长**: {tool_call["args"].get("duration_minutes")} 分钟
+**日期**: {tool_call["args"].get("preferred_day")}
 """
     elif tool_call["name"] == "Question":
-        # Special formatting for questions to make them clear
-        display += f"""# Question for User
+        # 对问题使用特殊格式，使其更清晰
+        display += f"""# 给用户的问题
 
 {tool_call["args"].get("content")}
 """
     else:
-        # Generic format for other tools
-        display += f"""# Tool Call: {tool_call["name"]}
+        # 其他工具使用通用格式
+        display += f"""# 工具调用：{tool_call["name"]}
 
-Arguments:"""
+参数："""
         
-        # Check if args is a dictionary or string
+        # 检查 args 是字典还是字符串
         if isinstance(tool_call["args"], dict):
             display += f"\n{json.dumps(tool_call['args'], indent=2)}\n"
         else:
@@ -106,21 +106,21 @@ Arguments:"""
     return display
 
 def parse_email(email_input: dict) -> dict:
-    """Parse an email input dictionary.
+    """解析邮件输入字典。
 
     Args:
-        email_input (dict): Dictionary containing email fields:
-            - author: Sender's name and email
-            - to: Recipient's name and email
-            - subject: Email subject line
-            - email_thread: Full email content
+        email_input (dict): 包含邮件字段的字典：
+            - author: 发件人的姓名和邮箱
+            - to: 收件人的姓名和邮箱
+            - subject: 邮件主题行
+            - email_thread: 完整邮件内容
 
     Returns:
-        tuple[str, str, str, str]: Tuple containing:
-            - author: Sender's name and email
-            - to: Recipient's name and email
-            - subject: Email subject line
-            - email_thread: Full email content
+        tuple[str, str, str, str]: 包含以下内容的元组：
+            - author: 发件人的姓名和邮箱
+            - to: 收件人的姓名和邮箱
+            - subject: 邮件主题行
+            - email_thread: 完整邮件内容
     """
     return (
         email_input["author"],
@@ -130,38 +130,37 @@ def parse_email(email_input: dict) -> dict:
     )
 
 def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str | None]:
-    """Parse an email input dictionary for Gmail, including the email ID.
+    """解析 Gmail 的邮件输入字典，包括邮件 ID。
     
-    This function extends parse_email by also returning the email ID,
-    which is used specifically in the Gmail integration.
+    此函数扩展了 parse_email，额外返回用于 Gmail 集成的邮件 ID。
 
     Args:
-        email_input (dict): Dictionary containing email fields in any of these formats:
-            Gmail schema:
-                - From: Sender's email
-                - To: Recipient's email
-                - Subject: Email subject line
-                - Body: Full email content
-                - Id: Gmail message ID
+        email_input (dict): 包含以下格式邮件字段的字典：
+            Gmail 架构：
+                - From: 发件人邮箱
+                - To: 收件人邮箱
+                - Subject: 邮件主题行
+                - Body: 完整邮件内容
+                - Id: Gmail 消息 ID
             
     Returns:
-        tuple[str, str, str, str, str]: Tuple containing:
-            - author: Sender's name and email
-            - to: Recipient's name and email
-            - subject: Email subject line
-            - email_thread: Full email content
-            - email_id: Email ID (or None for a Studio Chat request)
+        tuple[str, str, str, str, str]: 包含以下内容的元组：
+            - author: 发件人的姓名和邮箱
+            - to: 收件人的姓名和邮箱
+            - subject: 邮件主题行
+            - email_thread: 完整邮件内容
+            - email_id: 邮件 ID（Studio Chat 请求时为 None）
     """
 
     required_fields = ("from", "to", "subject", "body")
     missing_fields = [field for field in required_fields if field not in email_input]
     if missing_fields:
         raise ValueError(
-            "Invalid Gmail email_input; missing required field(s): "
+            "无效的 Gmail email_input；缺少必填字段："
             + ", ".join(missing_fields)
         )
 
-    # Gmail schema
+    # Gmail 架构
     return (
         email_input["from"],
         email_input["to"],
@@ -171,25 +170,25 @@ def parse_gmail(email_input: dict) -> tuple[str, str, str, str, str | None]:
     )
     
 def extract_message_content(message) -> str:
-    """Extract content from different message types as clean string.
+    """从不同消息类型中提取内容，并返回干净的字符串。
     
     Args:
-        message: A message object (HumanMessage, AIMessage, ToolMessage)
+        message: 消息对象（HumanMessage、AIMessage、ToolMessage）
         
     Returns:
-        str: Extracted content as clean string
+        str: 提取出的干净字符串内容
     """
     content = message.content
     
-    # Check for recursion marker in string
+    # 检查字符串中的递归标记
     if isinstance(content, str) and '<Recursion on AIMessage with id=' in content:
-        return "[Recursive content]"
+        return "[递归内容]"
     
-    # Handle string content
+    # 处理字符串内容
     if isinstance(content, str):
         return content
         
-    # Handle list content (AIMessage format)
+    # 处理列表内容（AIMessage 格式）
     elif isinstance(content, list):
         text_parts = []
         for item in content:
@@ -197,74 +196,73 @@ def extract_message_content(message) -> str:
                 text_parts.append(item['text'])
         return "\n".join(text_parts)
     
-    # Don't try to handle recursion to avoid infinite loops
-    # Just return string representation instead
+    # 不尝试处理递归，以避免无限循环
+    # 改为直接返回字符串表示
     return str(content)
 
 def format_few_shot_examples(examples):
-    """Format examples into a readable string representation.
+    """将示例格式化为易读的字符串表示。
 
     Args:
-        examples (List[Item]): List of example items from the vector store, where each item
-            contains a value string with the format:
+        examples (List[Item]): 来自向量存储的示例项列表，每个示例项都包含以下格式的值字符串：
             'Email: {...} Original routing: {...} Correct routing: {...}'
 
     Returns:
-        str: A formatted string containing all examples, with each example formatted as:
-            Example:
-            Email: {email_details}
-            Original Classification: {original_routing}
-            Correct Classification: {correct_routing}
+        str: 包含所有示例的格式化字符串，每个示例的格式如下：
+            示例：
+            邮件：{email_details}
+            原始分类：{original_routing}
+            正确分类：{correct_routing}
             ---
     """
     formatted = []
     for example in examples:
-        # Parse the example value string into components
+        # 将示例值字符串解析为多个组成部分
         email_part = example.value.split('Original routing:')[0].strip()
         original_routing = example.value.split('Original routing:')[1].split('Correct routing:')[0].strip()
         correct_routing = example.value.split('Correct routing:')[1].strip()
         
-        # Format into clean string
-        formatted_example = f"""Example:
-Email: {email_part}
-Original Classification: {original_routing}
-Correct Classification: {correct_routing}
+        # 格式化为干净的字符串
+        formatted_example = f"""示例：
+邮件：{email_part}
+原始分类：{original_routing}
+正确分类：{correct_routing}
 ---"""
         formatted.append(formatted_example)
     
     return "\n".join(formatted)
 
 def extract_tool_calls(messages: List[Any]) -> List[str]:
-    """Extract tool call names from messages, safely handling messages without tool_calls."""
+    """从消息中提取工具调用名称，并安全处理没有 tool_calls 的消息。"""
     tool_call_names = []
     for message in messages:
-        # Check if message is a dict and has tool_calls
+        # 检查消息是否为包含 tool_calls 的字典
         if isinstance(message, dict) and message.get("tool_calls"):
             tool_call_names.extend([call["name"].lower() for call in message["tool_calls"]])
-        # Check if message is an object with tool_calls attribute
+        # 检查消息是否为具有 tool_calls 属性的对象
         elif hasattr(message, "tool_calls") and message.tool_calls:
             tool_call_names.extend([call["name"].lower() for call in message.tool_calls])
     
     return tool_call_names
 
 def format_messages_string(messages: List[Any]) -> str:
-    """Format messages into a single string for analysis."""
+    """将消息格式化为一个字符串，供分析使用。"""
     return '\n'.join(message.pretty_repr() for message in messages)
 
 def show_graph(graph, xray=False):
-    """Display a LangGraph mermaid diagram with fallback rendering.
+    """显示 LangGraph Mermaid 图，并提供备用渲染方式。
     
-    Handles timeout errors from mermaid.ink by falling back to pyppeteer.
+    当 mermaid.ink 超时时，回退到 pyppeteer。
     
     Args:
-        graph: The LangGraph object that has a get_graph() method
+        graph: 具有 get_graph() 方法的 LangGraph 对象
     """
     from IPython.display import Image
     try:
-        # Try the default renderer first
+        # 先尝试默认渲染器
         return Image(graph.get_graph(xray=xray).draw_mermaid_png())
     except Exception as e:
-        # Fall back to pyppeteer if the default renderer fails
+        # 默认渲染器失败时回退到 pyppeteer
         import nest_asyncio
         nest_asyncio.apply()
         from langchain_core.runnables.graph import MermaidDrawMethod

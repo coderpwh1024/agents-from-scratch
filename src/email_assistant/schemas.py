@@ -3,24 +3,24 @@ from typing_extensions import Literal, NotRequired, TypedDict
 from langgraph.graph import MessagesState
 
 class RouterSchema(BaseModel):
-    """Analyze the unread email and route it according to its content."""
+    """分析未读邮件，并根据其内容进行路由。"""
 
     reasoning: str = Field(
-        description="Step-by-step reasoning behind the classification."
+        description="分类背后的逐步推理过程。"
     )
     classification: Literal["ignore", "respond", "notify"] = Field(
-        description="The classification of an email: 'ignore' for irrelevant emails, "
-        "'notify' for important information that doesn't need a response, "
-        "'respond' for emails that need a reply",
+        description="邮件的分类：'ignore' 表示不相关的邮件，"
+        "'notify' 表示不需要回复的重要信息，"
+        "'respond' 表示需要回复的邮件",
     )
 
 class StateInput(MessagesState):
-    """Accept either a structured email or Chat UI messages at graph entry."""
+    """在图入口处接收结构化邮件或聊天界面消息。"""
 
     email_input: NotRequired[dict]
 
 class State(MessagesState):
-    # This state class has the messages key build in
+    # 此状态类内置了 messages 键
     email_input: dict
     classification_decision: Literal["ignore", "respond", "notify"]
 
@@ -34,6 +34,6 @@ class EmailData(TypedDict):
     to_email: str
 
 class UserPreferences(BaseModel):
-    """Updated user preferences based on user's feedback."""
-    chain_of_thought: str = Field(description="Reasoning about which user preferences need to add/update if required")
-    user_preferences: str = Field(description="Updated user preferences")
+    """根据用户反馈更新后的用户偏好。"""
+    chain_of_thought: str = Field(description="对需要添加或更新哪些用户偏好的推理")
+    user_preferences: str = Field(description="更新后的用户偏好")
