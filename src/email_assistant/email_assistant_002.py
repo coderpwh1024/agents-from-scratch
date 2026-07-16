@@ -1,14 +1,16 @@
 """LLM-driven email response helper."""
 from typing import Literal
 
+from langchain_core.messages import ToolMessage
+
 from email_assistant.models import get_chat_model
 from email_assistant.schemas_002 import State
-from email_assistant.tools import get_tools
+from email_assistant.tools import get_tools, get_tools_by_name
 from langgraph.graph import StateGraph, START, END
 tools = get_tools()
 
 llm = get_chat_model(temperature=0.0)
-
+tools_by_name = get_tools_by_name(tools)
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -44,3 +46,17 @@ def should_continue(state: State)-> Literal["tool_node", "__end__"]:
         return "tool_node"
     else:
         return END
+
+
+def tool_node(state:State):
+    """执行工具调用"""
+
+    messages  = state["messages"]
+    result =[]
+    if messages[-1].tool_calls:
+        for tool_call in messages[-1].tool_calls:
+            tool =tools_by_name[tool_call["name"]]
+            observation = tool.invoke(tool_call["args"])
+            tool_message= ToolMessage(tool_call_id=tool_call["id"], content=str(observation))
+            result.append(tool_message)
+    return {"messages": result}
