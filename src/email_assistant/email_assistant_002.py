@@ -60,3 +60,22 @@ def tool_node(state:State):
             tool_message= ToolMessage(tool_call_id=tool_call["id"], content=str(observation))
             result.append(tool_message)
     return {"messages": result}
+
+
+
+# 构建图
+response_agent = StateGraph(State)
+
+response_agent.add_node("llm_call", llm_call)
+response_agent.add_node("tool_node", tool_node)
+response_agent.add_edge(START, "llm_call")
+response_agent.add_conditional_edges(
+    "llm_call",
+    should_continue,
+    {
+        "tool_node": "tool_node",
+        END: END,
+    },
+)
+response_agent.add_edge("tool_node", "llm_call")
+response_agent = response_agent.compile()
