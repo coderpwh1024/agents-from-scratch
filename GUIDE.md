@@ -20,7 +20,11 @@
 - [x] `schemas.py`：已独立完成并验收 `RouterSchema`、`StateInput`、`State`、`EmailData` 和 `UserPreferences`。
   - 能解释入口状态与运行期状态的边界：`StateInput.email_input` 可缺省以支持聊天消息入口；进入图后，`State.email_input` 作为后续节点依赖的数据必须存在。
   - 能解释 `Literal["ignore", "respond", "notify"]` 同时约束结构化模型输出与图路由的合法下一跳。
-- [ ] `email_assistant.py`：先通读基础双层图；随后脱离源码复述流程，并独立手撸实现。
+- [x] `email_assistant.py`：已完成基础双层图的流程理解验收。
+  - 外层图：`triage_router → response_agent / END`，负责邮件分诊与是否进入处理流程的决策。
+  - 内层图：`llm_call → should_continue → tool_node → llm_call`，模型根据工具结果迭代，直至不再产生 `tool_calls` 后结束。
+  - 能解释 `Command(goto=...)` 用于指定图的下一节点，并可同时更新状态。
+- [ ] `email_assistant_002.py`：开始独立手撸基础版；当前进行第 1A 步——先定义 `llm_call`、`tool_node`、`should_continue`、`triage_router` 的职责与状态读写边界，再构建内层图和外层图。
 
 ## 优先级
 
