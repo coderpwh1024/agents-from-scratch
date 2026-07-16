@@ -138,7 +138,7 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
     classification = result.classification
 
     if classification == "respond":
-        print("📧 Classification: RESPOND - This email requires a response")
+        print("📧 分类结果：需要回复——此邮件需要答复")
         goto = "response_agent"
         # 将邮件添加到消息列表
         update = {
@@ -148,14 +148,14 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
                         }],
         }
     elif result.classification == "ignore":
-        print("🚫 Classification: IGNORE - This email can be safely ignored")
+        print("🚫 分类结果：忽略——此邮件可以安全忽略")
         update =  {
             "classification_decision": result.classification,
         }
         goto = END
     elif result.classification == "notify":
         # 在实际场景中，这里会执行其他操作
-        print("🔔 Classification: NOTIFY - This email contains important information")
+        print("🔔 分类结果：通知——此邮件包含重要信息")
         update = {
             "classification_decision": result.classification,
         }
