@@ -79,3 +79,29 @@ response_agent.add_conditional_edges(
 )
 response_agent.add_edge("tool_node", "llm_call")
 response_agent = response_agent.compile()
+
+
+def triage_router(state: State):
+    """邮件分类"""
+    email_input =  state.get("email_input")
+
+    if email_input is None:
+        messages = state.get("messages", [])
+        if not messages:
+            raise ValueError("Provide either email_input or a chat message.")
+        content = messages[-1].content
+        email_input = {
+            "author": "Chat user",
+            "to": "Email assistant",
+            "subject": "Chat request",
+            "email_thread": content if isinstance(content, str) else str(content),
+        }
+        update = {
+            "email_input": email_input,
+        }
+        goto = "response_agent"
+
+
+
+
+

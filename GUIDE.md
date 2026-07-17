@@ -24,7 +24,18 @@
   - 外层图：`triage_router → response_agent / END`，负责邮件分诊与是否进入处理流程的决策。
   - 内层图：`llm_call → should_continue → tool_node → llm_call`，模型根据工具结果迭代，直至不再产生 `tool_calls` 后结束。
   - 能解释 `Command(goto=...)` 用于指定图的下一节点，并可同时更新状态。
-- [ ] `email_assistant_002.py`：开始独立手撸基础版；当前进行第 1A 步——先定义 `llm_call`、`tool_node`、`should_continue`、`triage_router` 的职责与状态读写边界，再构建内层图和外层图。
+- [ ] `email_assistant_002.py`：正在独立手撸基础版。
+  - [x] 内层 `response_agent` 已完成并通过导入/编译验证：`START → llm_call → should_continue → tool_node → llm_call`；无 `tool_calls` 时到 `END`。
+  - [x] `llm_call`：将结构化邮件信息与历史 `messages` 交给绑定工具的 LLM，并将 AI 消息返回给状态。
+  - [x] `should_continue`：以最后一条 AI 消息的 `tool_calls` 是否为空为条件，路由至 `tool_node` 或 `END`。
+  - [x] `tool_node`：按工具名执行全部工具调用，并以携带原始 `tool_call_id` 的 `ToolMessage` 返回本轮结果。
+  - [ ] 当前任务：完成外层节点 `triage_router(state)`。
+    1. 函数签名声明其返回 `Command`，下一跳限定为 `response_agent` 或 `END`。
+    2. 用 `state.get("email_input")` 读取可选入口；缺失时从最后一条聊天消息标准化出邮件数据。
+    3. 聊天入口的邮件字段须与内层读取字段一致：`from_email`、`to_email`、`subject`、`page_content`。
+    4. 接入 `RouterSchema` 的结构化 LLM 输出，取得 `ignore / notify / respond` 分类。
+    5. 用 `Command(update={...}, goto=...)` 写入 `email_input` 与 `classification_decision`；仅 `respond` 去 `response_agent`，其余分类到 `END`。
+  - [ ] 后续任务：构建外层 `StateGraph(State, input_schema=StateInput)`，连线 `START → triage_router → response_agent / END`，编译后以一封测试邮件验证路由与内层循环。
 
 ## 优先级
 
