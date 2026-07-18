@@ -355,7 +355,9 @@ Gmail 图的输入字段与前面不同，必须带有 Gmail 邮件 ID：
 
 首次请使用测试 Gmail 账号和测试邮件，并优先在人工中断中选择 `ignore` 或 `edit`。确认 OAuth、记忆和人工介入均正常后，再使用 `accept` 执行真实的发信或创建日程操作。最后检查流程是否经过 `mark_as_read_node`，以及目标邮件是否已标记为已读。
 
+
 若希望自动从真实 Gmail 取邮件并提交到本地 Server，可在 `langgraph dev` 运行期间另开一个终端执行：
+
 
 ```shell
 uv run python src/email_assistant/tools/gmail/run_ingest.py \
