@@ -29,13 +29,12 @@
   - [x] `llm_call`：将结构化邮件信息与历史 `messages` 交给绑定工具的 LLM，并将 AI 消息返回给状态。
   - [x] `should_continue`：以最后一条 AI 消息的 `tool_calls` 是否为空为条件，路由至 `tool_node` 或 `END`。
   - [x] `tool_node`：按工具名执行全部工具调用，并以携带原始 `tool_call_id` 的 `ToolMessage` 返回本轮结果。
-  - [ ] 当前任务：完成外层节点 `triage_router(state)`。
-    1. 函数签名声明其返回 `Command`，下一跳限定为 `response_agent` 或 `END`。
-    2. 用 `state.get("email_input")` 读取可选入口；缺失时从最后一条聊天消息标准化出邮件数据。
-    3. 聊天入口的邮件字段须与内层读取字段一致：`from_email`、`to_email`、`subject`、`page_content`。
-    4. 接入 `RouterSchema` 的结构化 LLM 输出，取得 `ignore / notify / respond` 分类。
-    5. 用 `Command(update={...}, goto=...)` 写入 `email_input` 与 `classification_decision`；仅 `respond` 去 `response_agent`，其余分类到 `END`。
-  - [ ] 后续任务：构建外层 `StateGraph(State, input_schema=StateInput)`，连线 `START → triage_router → response_agent / END`，编译后以一封测试邮件验证路由与内层循环。
+  - [x] 外层节点 `triage_router(state)` 已完成并通过本地替身验证。
+    1. 返回 `Command[Literal["response_agent", "__end__"]]`，下一跳仅为 `response_agent` 或 `END`。
+    2. 支持 `email_input` 与聊天消息两种入口；聊天消息会标准化为 `from_email`、`to_email`、`subject`、`page_content`。
+    3. 使用 `RouterSchema` 获取 `ignore / notify / respond` 结构化分类，并通过 `Command` 写入 `email_input` 和 `classification_decision`。
+    4. 已验证三种分类：仅 `respond` 路由至 `response_agent`，其余分类结束。
+  - [ ] 当前任务：构建外层 `StateGraph(State, input_schema=StateInput)`，连线 `START → triage_router → response_agent / END`，编译后以一封测试邮件验证路由与内层循环。
 
 ## 优先级
 
