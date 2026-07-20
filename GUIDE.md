@@ -24,7 +24,7 @@
   - 外层图：`triage_router → response_agent / END`，负责邮件分诊与是否进入处理流程的决策。
   - 内层图：`llm_call → should_continue → tool_node → llm_call`，模型根据工具结果迭代，直至不再产生 `tool_calls` 后结束。
   - 能解释 `Command(goto=...)` 用于指定图的下一节点，并可同时更新状态。
-- [ ] `email_assistant_002.py`：正在独立手撸基础版。
+- [x] `email_assistant_002.py`：已独立完成基础版并通过验证。
   - [x] 内层 `response_agent` 已完成并通过导入/编译验证：`START → llm_call → should_continue → tool_node → llm_call`；无 `tool_calls` 时到 `END`。
   - [x] `llm_call`：将结构化邮件信息与历史 `messages` 交给绑定工具的 LLM，并将 AI 消息返回给状态。
   - [x] `should_continue`：以最后一条 AI 消息的 `tool_calls` 是否为空为条件，路由至 `tool_node` 或 `END`。
@@ -34,7 +34,9 @@
     2. 支持 `email_input` 与聊天消息两种入口；聊天消息会标准化为 `from_email`、`to_email`、`subject`、`page_content`。
     3. 使用 `RouterSchema` 获取 `ignore / notify / respond` 结构化分类，并通过 `Command` 写入 `email_input` 和 `classification_decision`。
     4. 已验证三种分类：仅 `respond` 路由至 `response_agent`，其余分类结束。
-  - [ ] 当前任务：构建外层 `StateGraph(State, input_schema=StateInput)`，连线 `START → triage_router → response_agent / END`，编译后以一封测试邮件验证路由与内层循环。
+  - [x] 外层 `StateGraph(State, input_schema=StateInput)` 已完成：`START → triage_router → response_agent / END`，并已编译为 `email_assistant`。
+  - [x] 通过本地 LLM 替身完成端到端路由验证：`ignore` 与 `notify` 直接结束，`respond` 进入 `response_agent` 并返回回复。
+  - [ ] 当前任务：阅读并解释 `prompts.py` 与 `tools/default/`，明确分诊/回复提示词的职责边界，以及每个工具的输入 schema、权限和终止条件。
 
 ## 优先级
 

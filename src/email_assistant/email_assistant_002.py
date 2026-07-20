@@ -7,7 +7,7 @@ from langgraph.types import Command
 from email_assistant.models import get_chat_model
 from email_assistant.prompts import triage_system_prompt, default_background, default_triage_instructions, \
     triage_user_prompt
-from email_assistant.schemas_002 import State, RouterSchema
+from email_assistant.schemas_002 import State, RouterSchema, StateInput
 from email_assistant.tools import get_tools, get_tools_by_name
 from langgraph.graph import StateGraph, START, END
 
@@ -159,3 +159,14 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
     else:
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto, update=update)
+
+
+# 构建工作流
+overall_workflow = (
+    StateGraph(State, input_schema=StateInput)
+    .add_node(triage_router)
+    .add_node("response_agent", response_agent)
+    .add_edge(START, "triage_router")
+)
+
+email_assistant = overall_workflow.compile()
