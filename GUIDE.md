@@ -40,15 +40,15 @@
 
 ## 优先级
 
-| 学习序号 | 优先级等级 | 模块 | 应掌握的能力 | 是否手撸 |
-| --- | --- | --- | --- | --- |
-| 1 | P0（必须） | `schemas.py`、`email_assistant.py` | State 的定义；`Command(goto=...)` 路由；LLM 与工具节点的循环 | 是，独立重写基础版 |
-| 2 | P0（必须） | `prompts.py`、`tools/default/` | 为什么分拆“分诊”和“回复”；工具 schema、权限与终止条件 | 是，换一个小业务改写 |
-| 3 | P0（必须） | `email_assistant_hitl.py` | 哪些动作必须审批；`interrupt()` 后如何恢复；批准、编辑、拒绝的状态语义 | 是，重写一次关键路径 |
-| 4 | P0（必须） | `eval/`、`tests/` | 测量分诊准确性、工具调用、回复质量和回归，而不只是看能否运行 | 是，新增自己的数据集和断言 |
-| 5 | P1（重点） | `email_assistant_hitl_memory.py` | 区分 checkpoint（恢复执行）和 Store（跨会话偏好）；理解记忆读写时机及污染风险 | 建议手撸精简版 |
-| 6 | P2（部分关注） | `configuration.py`、`models.py`、`utils.py` | 配置、模型封装与可测试性 | 读懂并能修改 |
-| 7 | P2（部分关注） | `email_assistant_hitl_memory_gmail.py`、`tools/gmail/`、`cron.py` | OAuth、真实副作用、幂等、已读标记、定时触发和部署边界 | 暂不必全手撸 |
+| 学习序号 | 优先级等级 | 模块 | 应掌握的能力 | 是否手撸 | 进度 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | P0（必须） | `schemas.py`、`email_assistant.py`、`email_assistant_002.py` | State 的定义；`Command(goto=...)` 路由；LLM 与工具节点的循环 | 是，独立重写基础版 | 已完成 |
+| 2 | P0（必须） | `prompts.py`、`tools/default/` | 为什么分拆“分诊”和“回复”；工具 schema、权限与终止条件 | 是，换一个小业务改写 | 进行中 |
+| 3 | P0（必须） | `email_assistant_hitl.py` | 哪些动作必须审批；`interrupt()` 后如何恢复；批准、编辑、拒绝的状态语义 | 是，重写一次关键路径 | 未开始 |
+| 4 | P0（必须） | `eval/`、`tests/` | 测量分诊准确性、工具调用、回复质量和回归，而不只是看能否运行 | 是，新增自己的数据集和断言 | 未开始 |
+| 5 | P1（重点） | `email_assistant_hitl_memory.py` | 区分 checkpoint（恢复执行）和 Store（跨会话偏好）；理解记忆读写时机及污染风险 | 建议手撸精简版 | 未开始 |
+| 6 | P2（部分关注） | `configuration.py`、`models.py`、`utils.py` | 配置、模型封装与可测试性 | 读懂并能修改 | 未开始 |
+| 7 | P2（部分关注） | `email_assistant_hitl_memory_gmail.py`、`tools/gmail/`、`cron.py` | OAuth、真实副作用、幂等、已读标记、定时触发和部署边界 | 暂不必全手撸 | 未开始 |
 
 ## 核心心智模型
 

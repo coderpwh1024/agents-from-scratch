@@ -6,11 +6,12 @@ from langgraph.types import Command
 
 from email_assistant.models import get_chat_model
 from email_assistant.prompts import triage_system_prompt, default_background, default_triage_instructions, \
-    triage_user_prompt
+    triage_user_prompt, agent_system_prompt, default_response_preferences, default_cal_preferences
 from email_assistant.schemas_002 import State, RouterSchema, StateInput
 from email_assistant.tools import get_tools, get_tools_by_name
 from langgraph.graph import StateGraph, START, END
 
+from email_assistant.tools.default import AGENT_TOOLS_PROMPT
 from email_assistant.utils import format_email_markdown
 
 tools = get_tools()
@@ -21,6 +22,13 @@ llm_router = llm.with_structured_output(RouterSchema)
 tools_by_name = get_tools_by_name(tools)
 llm_with_tools = llm.bind_tools(tools)
 
+system_prompt = agent_system_prompt.format(
+    tools_prompt=AGENT_TOOLS_PROMPT,
+    background=default_background,
+    response_preferences=default_response_preferences,
+    cal_preferences=default_cal_preferences,
+)
+
 
 # lll 函数
 def llm_call(state: State):
@@ -29,7 +37,7 @@ def llm_call(state: State):
         "messages": [
             llm_with_tools.invoke(
                 [
-                    {"role": "system", "content": "这是提示词"},
+                    {"role": "system", "content": system_prompt},
                     {
                         "role": "user",
                         "content": f"""发件人:{state["email_input"].get('from_email')},
