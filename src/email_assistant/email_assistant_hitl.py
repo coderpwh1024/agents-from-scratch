@@ -215,6 +215,9 @@ def interrupt_handler(state: State) -> Command[Literal["llm_call", "__end__"]]:
 
             # 直接执行 search_memory 和其他工具，无需中断
             tool = tools_by_name[tool_call["name"]]
+
+
+
             observation = tool.invoke(tool_call["args"])
             result.append({"role": "tool", "content": observation, "tool_call_id": tool_call["id"]})
             continue
@@ -370,7 +373,7 @@ def should_continue(state: State) -> Literal["interrupt_handler", "__end__"]:
     messages = state["messages"]
     last_message = messages[-1]
     if last_message.tool_calls:
-        for tool_call in last_message.tool_calls: 
+        for tool_call in last_message.tool_calls:
             if tool_call["name"] == "Done":
                 return END
             else:
