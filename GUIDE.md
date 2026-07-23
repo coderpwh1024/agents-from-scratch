@@ -52,13 +52,17 @@
     4. 已验证三种分类：仅 `respond` 路由至 `response_agent`，其余分类结束。
   - [x] 外层 `StateGraph(State, input_schema=StateInput)` 已完成：`START → triage_router → response_agent / END`，并已编译为 `email_assistant`。
   - [x] 通过本地 LLM 替身完成端到端路由验证：`ignore` 与 `notify` 直接结束，`respond` 进入 `response_agent` 并返回回复。
-  - [ ] 当前任务：阅读并解释 `prompts.py` 与 `tools/default/`，明确分诊/回复提示词的职责边界，以及每个工具的输入 schema、权限和终止条件。
+  - [x] Session 01：已完成“工具边界与完整请求链路”状态追踪，笔记见 `notes/session-01-tool-boundary.md`。
+    - 已能准确说明外层 `triage_router` 的 `ignore / notify / respond` 分支，以及仅 `respond` 进入内层 `response_agent`。
+    - 已能准确说明内层循环：`llm_call → should_continue → tool_node → llm_call`；`tool_node` 追加 `ToolMessage` 后必须交回模型解释结果、回复或决定下一轮调用。
+    - 已区分每个节点对 `email_input`、`classification_decision` 和 `messages` 的读取/写入责任。
+  - [ ] 当前任务：审计 `prompts.py` 与 `tools/default/email_tools.py` 中的 `write_email`，写出其输入 schema、允许/拒绝条件、失败处理、终止条件，以及为什么真实发送必须由 HITL 拦截。
 
 ## 能力专题与投入边界
 
 | 专题 | 必须掌握的问题 | 深入范围 | 验收证据 | 学习方式 |
 | --- | --- | --- | --- | --- |
-| 工具边界 | 模型何时该调用工具，工具如何拒绝越权/失败输入 | `prompts.py`、`tools/default/`、相关测试 | 工具权限表；成功、拒绝、失败三类断言 | 审计一个默认工具并做最小改造 |
+| 工具边界 | 模型何时该调用工具，工具如何拒绝越权/失败输入 | `prompts.py`、`tools/default/`、相关测试 | 已完成请求链路与状态基线；待完成 `write_email` 权限表及成功、拒绝、失败三类断言 | 先审计 `write_email`，再做最小改造 |
 | 人工介入（HITL） | 哪些副作用必须审批；批准、编辑、拒绝后图如何恢复或结束 | `email_assistant_hitl.py` | 状态图；三条恢复路径测试 | 选择性盲写一个关键中断路径 |
 | 评估与回归 | 如何证明改动有效且没有退化 | `eval/`、`tests/` | 15–20 条数据集，覆盖正常/模糊/越权/高风险/工具失败 | 每次改动先补断言，再实现 |
 | 长期记忆 | checkpoint 与 Store 的区别；何时读写偏好，如何避免污染 | `email_assistant_hitl_memory.py` | 一次人工修正影响下一次回复的端到端测试 | 在前 3 个专题完成后再做精简实验 |
@@ -116,7 +120,7 @@
 
 不要先复刻 Gmail 集成，也不要把完整邮件助手再写一遍。更有效的练习是，以基础 Agent 为底做一个有边界的小型改造：例如工单助手或会议请求助手。
 
-1. 先从一个“工具越权或工具失败”的场景开始，审计 `prompts.py` 和 `tools/default/`，写出工具的输入、权限、失败与终止条件。
+1. 已完成请求链路与状态追踪。下一步从 `write_email` 的“直接发送是否越权”场景开始，审计 `prompts.py` 和 `tools/default/email_tools.py`，写出工具的输入、权限、失败与终止条件。
 2. 再从 `email_assistant_hitl.py` 处理一个“发送或创建操作需要审批”的场景，画出批准、编辑、拒绝三条状态路径。
 3. 为前两步加入 10–20 条评估样本，至少覆盖：正常、模糊、越权、高风险、工具失败；以此作为后续提示词和工具改动的回归基线。
 4. 最后才让一次人工修改提炼为一条用户偏好记忆，并验证它会影响下一次回答。
