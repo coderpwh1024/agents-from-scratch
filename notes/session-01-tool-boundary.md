@@ -27,17 +27,18 @@ flowchart TD
 请只阅读 `email_assistant_002.py` 的 `triage_router`、`llm_call`、`should_continue`、`tool_node`，然后填写下表。重点不是复述代码，而是说明每个节点
 **读取什么、写入什么、为什么这样流转**。
 
-| 节点                               | 决策 / 职责                       | 读取的状态                | 写入或追加的状态                             | 本场景的下一跳            |
-|----------------------------------|-------------------------------|----------------------|--------------------------------------|--------------------|
-| `triage_router`                  | 邮件的分类路由处理                     | 读取user_input然后分类处理   | respond则 额外messagesg更新 其他 goto END状态等 | response_agent内层的  |
-| `response_agent.llm_call`（第一次）   | 判断是否调用 tools工具                | 读取 State里面的 messages | 同时 messages 里面会追加之前的 messages        | should_continue 节点 |                   |
-| `response_agent.should_continue` | 判断是否有工具执行，有则执行 tool_node,无则结束 | 获取 state里面的 messages |                                      | tool_node 节点       |
-| `response_agent.tool_node`       |                               |                      |                                      |                    |
-| `response_agent.llm_call`（工具结果后） | 根据tool工具进行调用,调用结果填写到state里面             | 读取state里面的 messages | 追加tool_node的返回结果                   | should_continue 节点 |                   |                                      |                    |
+| 节点 | 决策 / 职责 | 读取的状态 | 写入或追加的状态 | 本场景的下一跳 |
+| --- | --- | --- | --- | --- |
+| `triage_router` | 对邮件进行 `ignore` / `notify` / `respond` 分类并路由。 | 先读取 `email_input`；仅当其缺失时，读取最后一条 `messages` 并标准化为 `email_input`。 | 写入 `email_input`、`classification_decision`；仅 `respond` 时追加一条用户 `messages`。 | `respond` → `response_agent`；其余 → `END`。 |
+| `response_agent.llm_call`（第一次） | 根据邮件上下文和历史消息，生成回复或请求工具调用。 | 同时读取 `email_input` 和 `messages`。 | 追加一条 AI 消息；该消息可能带有 `tool_calls`。 | `should_continue` |
+| `response_agent.should_continue` | 检查最后一条 AI 消息是否包含工具调用。 | 最后一条 AI 消息的 `tool_calls`。 | 不写入状态。 | 有调用 → `tool_node`；无调用 → `END`。 |
+| `response_agent.tool_node` | 执行模型请求的一个或多个工具调用。 | 最后一条 AI 消息中的每个 `tool_call`。 | 追加一个或多个携带原始 `tool_call_id` 的 `ToolMessage`。 | `llm_call` |
+| `response_agent.llm_call`（工具结果后） | 根据 `ToolMessage` 理解执行结果，生成最终回复或决定是否继续请求工具。 | 同时读取 `email_input` 和 `messages`，此时 `messages` 中包含工具结果。 | 追加新的 AI 消息；再由 `should_continue` 判断结束或进入下一轮工具调用。 | `should_continue` |
 
 完成后，在下面用不超过三句话回答：
 
 > 为什么 `tool_node` 的结果不能直接结束，而必须回到 `llm_call`？
 
 你的回答：
-tool_node 的结果不能直接结束，而是返回给 llm_call，因为 tool_node 的结果可能包含多个步骤，需要根据步骤结果进行判断，是否继续执行下一个步骤。
+
+`tool_node` 只负责执行工具并返回 `ToolMessage`，不负责解释结果或生成最终回复；回到 `llm_call` 后，模型才能据此回复用户、继续调用工具或结束。
