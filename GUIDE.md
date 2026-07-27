@@ -56,13 +56,20 @@
     - 已能准确说明外层 `triage_router` 的 `ignore / notify / respond` 分支，以及仅 `respond` 进入内层 `response_agent`。
     - 已能准确说明内层循环：`llm_call → should_continue → tool_node → llm_call`；`tool_node` 追加 `ToolMessage` 后必须交回模型解释结果、回复或决定下一轮调用。
     - 已区分每个节点对 `email_input`、`classification_decision` 和 `messages` 的读取/写入责任。
-  - [ ] 当前任务：审计 `prompts.py` 与 `tools/default/email_tools.py` 中的 `write_email`，写出其输入 schema、允许/拒绝条件、失败处理、终止条件，以及为什么真实发送必须由 HITL 拦截。
+  - [x] Session 02：已完成 `write_email` 的权限边界审计，笔记见 `notes/session-02-write-email-boundary.md`。
+    - 已从三处取证并对照：`prompts.py` 的 `agent_system_prompt` 称其为“起草回复”；`tools/default/prompt_templates.py` 的 `AGENT_TOOLS_PROMPT` 与 `tools/default/email_tools.py` 的 docstring/实现均称其为“发送邮件”。
+    - 已识别核心风险：提示词语义（起草）与工具契约（发送）不一致；模型按“起草”调用，系统却直接产生外部副作用。
+    - 已给出输入 schema 与必填项：`to`、`from`、`subject`、`content` 四项必须完整。
+    - 已写出完整权限契约：输入 schema 与必填项、无条件审批（`write_email` 不存在“允许直接执行”）、缺信息拒绝而非猜测、失败区分可重试/不可重试、拒绝后 `goto=END`、成功后回 `llm_call` 并由 `Done` 终止。
+    - 已定位 HITL 插入点：风险判定不在 `should_continue`，而在 `interrupt_handler` 的 `hitl_tools` 白名单（`email_assistant_hitl.py:211`）；已梳理 accept / edit / response / ignore 四条状态语义，并总结硬约束——无论是否执行工具，都必须写回带原 `tool_call_id` 的 `ToolMessage`。
+    - 结论：真实发送不能仅靠提示词约束，必须在工具执行前由 HITL 拦截；HITL 的判据是“出错后能否靠下一轮修复”，而非“模型是否可能出错”。
+  - [ ] 待验证（下一 session）：`should_continue`（`email_assistant_hitl.py:371-380`）的 `for` 循环在首个 `tool_call` 即 return，且 `tool_calls` 为空时隐式返回 `None`——混合 `Done` 与 `write_email` 时的行为、以及空 `tool_calls` 是否落在条件边映射之外。
 
 ## 能力专题与投入边界
 
 | 专题 | 必须掌握的问题 | 深入范围 | 验收证据 | 学习方式 |
 | --- | --- | --- | --- | --- |
-| 工具边界 | 模型何时该调用工具，工具如何拒绝越权/失败输入 | `prompts.py`、`tools/default/`、相关测试 | 已完成请求链路与状态基线；待完成 `write_email` 权限表及成功、拒绝、失败三类断言 | 先审计 `write_email`，再做最小改造 |
+| 工具边界 | 模型何时该调用工具，工具如何拒绝越权/失败输入 | `prompts.py`、`tools/default/`、相关测试 | 已完成请求链路与状态基线；已完成 `write_email` 审计与权限契约表（语义冲突、schema、审批/失败/终止条件、HITL 插入点）；待完成成功、拒绝、失败三类断言 | 审计已完成，下一步做最小改造并补断言 |
 | 人工介入（HITL） | 哪些副作用必须审批；批准、编辑、拒绝后图如何恢复或结束 | `email_assistant_hitl.py` | 状态图；三条恢复路径测试 | 选择性盲写一个关键中断路径 |
 | 评估与回归 | 如何证明改动有效且没有退化 | `eval/`、`tests/` | 15–20 条数据集，覆盖正常/模糊/越权/高风险/工具失败 | 每次改动先补断言，再实现 |
 | 长期记忆 | checkpoint 与 Store 的区别；何时读写偏好，如何避免污染 | `email_assistant_hitl_memory.py` | 一次人工修正影响下一次回复的端到端测试 | 在前 3 个专题完成后再做精简实验 |
@@ -120,7 +127,7 @@
 
 不要先复刻 Gmail 集成，也不要把完整邮件助手再写一遍。更有效的练习是，以基础 Agent 为底做一个有边界的小型改造：例如工单助手或会议请求助手。
 
-1. 已完成请求链路与状态追踪。下一步从 `write_email` 的“直接发送是否越权”场景开始，审计 `prompts.py` 和 `tools/default/email_tools.py`，写出工具的输入、权限、失败与终止条件。
+1. 已完成请求链路与状态追踪；也已完成 `write_email` 的“直接发送是否越权”审计（`prompts.py` 与 `tools/default/email_tools.py`），确认提示词的“起草”与工具契约的“发送”存在语义冲突。剩余：补齐权限、失败与终止条件的留白项。
 2. 再从 `email_assistant_hitl.py` 处理一个“发送或创建操作需要审批”的场景，画出批准、编辑、拒绝三条状态路径。
 3. 为前两步加入 10–20 条评估样本，至少覆盖：正常、模糊、越权、高风险、工具失败；以此作为后续提示词和工具改动的回归基线。
 4. 最后才让一次人工修改提炼为一条用户偏好记忆，并验证它会影响下一次回答。
